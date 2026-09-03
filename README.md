@@ -1,36 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StockPilot
 
-## Getting Started
+Inventory intelligence for small manufacturers — a lightweight MRP system that
+tells you what you can build, what you're short on, what to buy, and when
+you'll run out. Fully deterministic: no LLM in the core engine.
 
-First, run the development server:
+## Problem
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Small manufacturers plan production and purchasing from spreadsheets or gut
+feel. They can't quickly answer "can we fulfill this order?", "what should we
+buy right now?", or "which orders are at risk?" — and the moment two people
+touch inventory at the same time, spreadsheets silently go wrong.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Solution
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+StockPilot models the manufacturing domain directly — products, materials,
+bills of materials, warehouses, suppliers, and an immutable stock-movement
+ledger — and answers those questions with explainable, deterministic
+calculations instead of a black box.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Architecture
 
-## Learn More
+[Insert your architecture.png here]
 
-To learn more about Next.js, take a look at the following resources:
+- Next.js (App Router) — UI + REST API via Route Handlers
+- PostgreSQL — source of truth, tenant isolation via Row-Level Security
+- Redis + BullMQ — background jobs (recommendation generation, reorder-point
+  refresh, notifications), run as a separate worker process
+- Docker Compose — local dev parity with production
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Multi-tenant, role-based access (Owner / Production Manager / Purchasing /
+  Warehouse Staff / Viewer)
+- Bill-of-materials–driven "max buildable units" calculation
+- Sales-order → material-requirements explosion with shortage detection
+- Automated purchase recommendations and supplier ranking
+- Reorder-point engine (lead-time demand + safety stock)
+- Simple moving-average demand forecasting
+- Heuristic production scheduling across machines
+- Immutable stock-movement ledger with concurrency-safe reservations
+- Full audit log, structured logging, health/readiness checks
 
-## Deploy on Vercel
+## Tech Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+TypeScript, Next.js, PostgreSQL, Prisma, Redis, BullMQ, Docker
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Setup
+
+\`\`\`bash
+docker compose up -d
+cp .env.example .env
+npx prisma migrate deploy
+npx prisma db seed
+npm run dev        # web
+npm run worker      # background jobs, separate process
+\`\`\`
+
+## Testing
+
+\`\`\`bash
+npm test              # unit + integration
+npm run test:race     # the concurrent stock-reservation test — see docs/writeups
+\`\`\`
+
+## Deployment
+
+[describe your actual deploy target and steps]
+
+## Security Considerations
+
+- Tenant isolation enforced at the database layer via PostgreSQL RLS, not
+  only in application code
+- Passwords hashed with argon2; sessions are server-side and revocable
+- Every mutation is permission-checked through a single `can()` function and
+  recorded in an append-only audit log
+- [add anything specific you found/fixed during your Week 4 security pass]
+
+## Performance Considerations
+
+- [insert your actual load-test numbers from Week 4]
+- Inventory reservation uses row-level locking (`FOR NO KEY UPDATE`) scoped
+  to a single material+warehouse row, chosen over `FOR UPDATE` because the
+  operation only changes a quantity, not a key column — see
+  docs/writeups/concurrency-case-study.md for the full reasoning and test.
+
+## Tradeoffs
+
+- Shared-schema + RLS multi-tenancy chosen over schema-per-tenant for
+  operational simplicity at this scale; documented migration path if a
+  future tenant needs dedicated isolation.
+- Production scheduling is a greedy heuristic (earliest-due-date first),
+  not an optimizer — documented as a known limitation, not hidden.
+- BOMs are single-level in v1; multi-level (sub-assembly) explosion is
+  future work.
+
+## Future Improvements
+
+- Multi-level BOM explosion with cycle detection
+- Exponential smoothing / seasonality in forecasting
+- Optimization-based (not greedy) production scheduling
+- StockPilot 2.0: an optional AI layer on top of this deterministic core —
+  a natural-language interface that calls the existing planning endpoints,
+  framed explicitly as an assistant layer, not a replacement for the engine.
