@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "npx prisma contract emit && dotenv -e .env -- npx prisma db migrate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "dotenv -e .env -- tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/cli-engine": "^0.3.0",

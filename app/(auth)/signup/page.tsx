@@ -1,4 +1,9 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useSession } from '@/components/session-provider';
 import { AuthForm } from '@/components/auth-form';
 import {
   Card,
@@ -9,6 +14,16 @@ import {
 } from '@/components/ui/card';
 
 export default function SignupPage() {
+  const session = useSession();
+  const router = useRouter();
+  useEffect(() => {
+    if (session) {
+      router.replace('/');
+    }
+  }, [session, router]);
+
+  if (session === undefined) return null;
+
   return (
     // The form column is viewport-locked on desktop, so main owns the scroll
     // (m-auto centers the card when there is room and scrolls without clipping

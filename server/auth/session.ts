@@ -109,8 +109,8 @@ export async function getSessionUser(token: string): Promise<SessionUser | null>
     tenantIds.length > 0
       ? await db.orm.public.Tenant.where((t) => t.id.in(tenantIds)).all()
       : [];
-  const tenantById = new Map(
-    tenants.map((t) => [String(t.id), t]),
+  const tenantById = new Map<string, typeof tenants[number]>(
+    tenants.map((t) => [t.id as string, t]),
   );
 
   const memberships: Array<{
@@ -120,7 +120,7 @@ export async function getSessionUser(token: string): Promise<SessionUser | null>
   }> = [];
   for (const b of roleBindings) {
     const tid = String(b.tenantId ?? '');
-    const user = tenantById.get(tid) ?? null;
+    const user = tenantById.get(tid as string) ?? null;
     memberships.push({
       id: 'stored',
       role: b.role,
@@ -151,7 +151,7 @@ export async function revokeAllSessions(userId: string): Promise<void> {
   const revokedAt = new Date().toISOString();
   for (const s of sessions) {
     if (s.revokedAt === null) {
-      await db.orm.public.Session.where((s) => s.id.eq(s.id)).update({ revokedAt });
+      await db.orm.public.Session.where((s) => s.id.eq(String(s.id))).update({ revokedAt });
     }
   }
 }
