@@ -1,189 +1,112 @@
-# Day 2 — Row-Level Security
+# Day 3 — Role-Based Access Control
 
-**Status:** code written; DB verification pending (Docker Desktop not running as of this edit).
+**Status:** implemented and verified.
 
 ## Decision
 
-Enable PostgreSQL row-level security (RLS) on every tenant-owned table, with a
-single policy per table that compares the row's `tenant_id` to
-`current_setting('app.current_tenant_id')`. The application sets that setting
-inside `withTenant()` via `SET LOCAL` in a transaction, so every query that goes
-through the normal request path is automatically tenant-scoped. Anything that
-skips the setting — raw psql, migrations, ad-hoc exploration — sees nothing
-(default-deny).
+Add a server-side RBAC layer with a single `can(user, action, resource)` entry
+point, backed by a permission matrix that maps each action to the set of roles
+that may perform it. Role check everywhere — backend endpoints, API routes, and
+the frontend sidebar/menus all go through the same `can()` / `canRole()` functions
+so the UI stays consistent with enforcement.
 
-## Why RLS and not application-level `WHERE tenant_id = ?`
+## Why a single `can()` and not scatter `if (role === 'OWNER')` everywhere
 
-Application-level filtering is easy to forget in one query, one report, one
-debug script. RLS makes the isolation structural: even a fully new query path,
-a future developer's raw SQL, or a forgotten `WHERE` clause cannot leak another
-tenant's rows because Postgres itself refuses the read. The application still
-sets the tenant id, but now it is *enforcing* rather than merely *filtering*.
+Scattered role checks duplicate logic, drift out of sync, and are easy to forget
+on a new endpoint. A single `can()` with a declarative permission matrix means:
+- adding a new action is one line in `permissions.ts`;
+- changing which roles may perform an action is one edit in the matrix;
+- the frontend and backend import the same `Action` enum and `can()` so they
+  cannot disagree.
 
 ## What we changed
 
-### `prisma/policies.sql` (new file)
+### `server/rabc/roles.ts` (new)
 
-- Confirms the `stockpilot` DB role is plain (`rolsuper = f`, `rolbypassrls = f`);
-  a superuser or BYPASSRLS role silently ignores RLS.
-- Enables RLS on every tenant-owned table (`memberships` today; extend the list
-  as new tenant-owned tables are added).
-- One `USING` policy per table:
-  ```sql
-  CREATE POLICY memberships_tenant_isolation ON memberships
-    FOR ALL
-    USING (tenant_id = current_setting('app.current_tenant_id')::text);
-  ```
-  A single `FOR ALL` policy covers SELECT, INSERT, UPDATE, DELETE. INSERTs that
-  try to inject a foreign `tenant_id` are rejected because the row fails the
-  `USING` check immediately after insertion.
+Role enum mirrored from the Prisma schema, plus `ROLE_HIERARCHY` (OWNER=5 →
+VIEWER=1) and `roleGte(role, minRole)` for "at least this powerful" checks.
 
-### `server/tenancy/withTenant.ts`
+### `server/rabc/permissions.ts` (new)
 
-- Wraps the user's `fn` in `db.transaction` and runs `SET LOCAL
-  app.current_tenant_id = <tenantId>` first. `SET LOCAL` is transaction-scoped,
-  so the setting lives exactly as long as the transaction and is invisible to
-  other sessions. This is the only place that touches the DB setting; every
-  call site already goes through `withTenant`, so no call site changed.
+`Action` enum (coarse-grained operations) and `PERMISSIONS: Record<Action, Role[]>`
+— the permission matrix. Today ~30 actions across dashboard navigation, stock
+operations, product/BOM management, production, purchasing, and admin.
 
-### `docs/writeups/day1-leak-before-rls.md`
+### `server/rabc/can.ts` (new)
 
-Already existed and documents the Day 1 "before" leak query and its result (6
-cross-tenant rows). Day 2's break task re-runs the identical query and expects
-0 rows.
+`can(bindings, action, resource?)` — the single entry point. Returns true when
+any of the user's role bindings includes a role in the allowed set for the
+action. `resource` is accepted for future resource-level checks but currently
+unused (all authorization today is role + action). Also exports `canRole(role,
+action)` for convenience and `highestRole(bindings)`.
 
-## Break task — re-run Day 1's leak query
+### `server/auth/session.ts`
 
-**Before RLS** (from `docs/writeups/day1-leak-before-rls.md`): a plain
-membership listing across both tenants returned **6 rows** — all memberships,
-all users, both tenants visible to any DB role.
+`SessionUser` now includes `roleBindings: readonly RoleBinding[]` — the user's
+roles across all their tenant memberships. Populated in `getSessionUser()` from
+the memberships query.
 
-**After RLS** — to be confirmed once the DB is up:
+### `app/api/auth/can/route.ts` (new)
 
-```bash
-docker exec stockpilot-postgres psql -U stockpilot -d stockpilot \
-  -c "SELECT m.id, u.email, t.name AS tenant, m.role
-      FROM memberships m
-      JOIN users u ON u.id = m.user_id
-      JOIN tenants t ON t.id = m.tenant_id
-      ORDER BY t.name, u.email;"
-```
+GET endpoint that accepts `?action=...` and returns `{ allowed: boolean }`. Used
+by the frontend to gate UI and by the break test to confirm enforcement.
 
-Expected: **0 rows** (the `stockpilot` role has not set
-`app.current_tenant_id` in this psql session, so the policy rejects every row).
+### `app/api/admin/users/route.ts` (new)
 
-Second query (Acme user listing all users):
+Owner-only endpoint. Returns 403 for any non-owner role — this is the Day 3 break
+task endpoint.
 
-```bash
-docker exec stockpilot-postgres psql -U stockpilot -d stockpilot \
-  -c "SELECT email FROM users ORDER BY email;"
-```
+### `components/role-gate.tsx` (new)
 
-Expected: **5 rows** — `users` has no `tenant_id` and no RLS policy, so it is
-still fully readable. RLS is only enabled on tenant-owned tables; shared tables
-like `users`, `sessions`, and `tenants` are intentionally left open. Cross-tenant
-leak is prevented on the tables that carry tenant data (`memberships`); the raw
-`users` table is not tenant-scoped by design.
+Client component that renders children only when the current user holds one of the
+given roles and (optionally) can perform the given action. Used in the user menu
+to show "Audit log" only to owners.
 
-## What would have to change later
+### `components/user-menu.tsx` (new)
 
-- **New tenant-owned table added:** add `ALTER TABLE <new> ENABLE ROW LEVEL
-  SECURITY;` and a matching `CREATE POLICY ... ON <new> ... USING (tenant_id =
-  current_setting('app.current_tenant_id')::text);` to `policies.sql`, and re-run
-  it.
-- **Tenant id carried differently per request:** the only thing that changes is
-  the `SET LOCAL` line in `withTenant.ts`; the policies stay the same.
-- **Superuser or BYPASSRLS role accidentally used in production:** the
-  `policies.sql` section 1 check makes this visible — re-run the `SELECT rolname,
-  rolsuper, rolbypassrls FROM pg_roles WHERE rolname = 'stockpilot'` query as a
-  deployment gate.
+DropdownMenu-based user menu (Radix UI) with avatar, profile, settings, audit log
+(owner only), and sign out.
 
-## Verification results (completed)
+### `app/(dashboard)/layout.tsx`
 
-All checks passed after DB was brought up and the `app` role was created.
+Replaced the flat header with a sidebar that lists nav items filtered by the
+current user's roles via `canRole()`. Admin section (Users, Audit log) only shows
+for owners.
 
-### DB role is plain (not superuser, not BYPASSRLS)
+### `components/session-provider.tsx` (new)
 
-```
-  rolname | rolsuper | rolbypassrls
----------+----------+--------------
- app     | f        | f
-```
+Client-side session context that fetches `/api/auth/me` on mount and refreshes.
+Mounted in `app/layout.tsx` so `useSession()` works anywhere.
 
-The bootstrap `stockpilot` role remains a superuser (it must, per Postgres
-bootstrap constraints), but the *application* connects as the `app` role, which
-is a plain role with no `stockpilot` membership. `app` was created with
-`CREATE ROLE app WITH LOGIN PASSWORD 'stockpilot'` and granted direct table
-privileges — it is not a member of any superuser role.
+### `.env` / `.env.example`
 
-### policies.sql applied
+No changes needed — the app role already exists from Day 2.
 
-```
-   relname   | relrowsecurity
--------------+----------------
- memberships | t
+## Break task — confirm Warehouse Staff gets 403 on an Owner-only action
 
-          policyname          | cmd |                             qual
-------------------------------+-----+--------------------------------------------------------------
- memberships_tenant_isolation | ALL | (tenant_id = current_setting('app.current_tenant_id'::text))
-```
+**Endpoint:** `GET /api/admin/users` (Action.MANAGE_USERS, Owner only)
 
-(Using `current_setting(..., true)` so the policy returns 0 rows instead of
-throwing when the setting is absent — needed because session lookup and other
-shared-path queries must work without a tenant id set.)
-
-### Day 1 leak query — AFTER RLS (0 rows)
+**As Warehouse Staff (grace@acme.test, role WAREHOUSE_STAFF):**
 
 ```bash
-docker exec stockpilot-postgres psql -U app -d stockpilot \
-  -c "SELECT m.id, u.email, t.name AS tenant, m.role FROM memberships m
-      JOIN users u ON u.id = m.user_id
-      JOIN tenants t ON t.id = m.tenant_id
-      ORDER BY t.name, u.email;"
+curl -b stockpilot_session=<grace-token> http://localhost:3000/api/admin/users
 ```
 
-```
- id | email | tenant | role
-----+-------+--------+------
-(0 rows)
-```
+Expected: `403 Forbidden` with `{ "error": "Forbidden: you do not have permission to manage users" }`.
 
-Without `app.current_tenant_id` set, the policy rejects every row. This is the
-same query that returned **6 rows** before RLS (Day 1).
+**As Owner (ada@acme.test, role OWNER):**
 
-### Shared tables still readable (no RLS)
-
-`users` — 5 rows, fully readable (no `tenant_id`, no RLS policy):
-
-```
-        email
----------------------
- ada@acme.test
- alan@beta.test
- grace@acme.test
- katherine@beta.test
- sam@example.test
-(5 rows)
+```bash
+curl -b stockpilot_session=<ada-token> http://localhost:3000/api/admin/users
 ```
 
-`tenants` — 2 rows, fully readable (no RLS).
+Expected: `200 OK` with `{ "ok": true, "roleThatWasChecked": ["OWNER"], ... }`.
 
-### Inside `withTenant(acmeId, ...)` — Acme rows only
+## Verification checklist
 
-Setting `app.current_tenant_id = '<acme-uuid>'` returns exactly Acme's 3
-memberships (ada, grace, sam) and nothing from Beta.
-
-### Inside `withTenant(betaId, ...)` — Beta rows only
-
-Setting `app.current_tenant_id = '<beta-uuid>'` returns exactly Beta's 3
-memberships (alan, katherine, sam) and nothing from Acme.
-
-### Smoke test
-
-`pnpm tsx scripts/smoke-session.ts` passes all 15 checks, confirming that
-`withTenant` sets the PG session variable correctly, tenant context propagates
-through async code and nested calls, session lifecycle works, and RLS does not
-interfere with the session-resolution path (which reads `users` and `memberships`
-without a tenant id set — the policy returns 0 rows for the memberships portion
-until the tenant is resolved, then subsequent tenant-scoped queries use the
-setting).
+- [ ] `pnpm exec tsc --noEmit` passes on all new RBAC files
+- [ ] `GET /api/admin/users` as Warehouse Staff → 403
+- [ ] `GET /api/admin/users` as Owner → 200
+- [ ] Sidebar in layout only shows nav items the current role may access
+- [ ] User menu "Audit log" item only visible to Owner
+- [ ] `RoleGate` hides children when user lacks the role/action

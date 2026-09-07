@@ -46,6 +46,17 @@ ALTER TABLE memberships ENABLE ROW LEVEL SECURITY;
 -- (default-denect).
 
 -- memberships: a row is visible only to members of its tenant.
+-- The `USING` clause covers SELECT/UPDATE/DELETE; `WITH CHECK` covers INSERT.
+-- Because the policy references `tenant_id` itself, INSERTs that try to inject
+-- a foreign tenant_id are also rejected (the row fails the USING check
+-- immediately after insertion). A single `FOR ALL` policy is sufficient.
+--
+-- Session-resolution exception: not done via GUC flag (which would leak across
+-- pooled connections). Instead, a SECURITY DEFINER function
+-- `get_user_role_bindings(p_user_id)` queries memberships with the privileges
+-- of its owner (the stockpilot superuser), bypassing RLS. The app role is
+-- granted EXECUTE on this function. This is used by createSession and
+-- getSessionUser to read memberships without a tenant context.
 CREATE POLICY memberships_tenant_isolation ON memberships
   FOR ALL
   USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
