@@ -40,4 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /migrations/*.ts
-.freebuff
+.freebuff 
+/.freebuff/
