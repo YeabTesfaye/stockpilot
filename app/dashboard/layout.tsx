@@ -19,6 +19,7 @@ import {
   CalendarClock,
   ChevronRight,
   ShieldCheck,
+  Building,
 } from 'lucide-react';
 
 export default async function DashboardLayout({
@@ -40,7 +41,9 @@ export default async function DashboardLayout({
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Boxes, action: Action.VIEW_DASHBOARD },
     { href: '/dashboard/inventory', label: 'Inventory', icon: Package, action: Action.VIEW_INVENTORY },
+    { href: '/dashboard/inventory/materials', label: 'Materials', icon: Package, action: Action.VIEW_MATERIALS },
     { href: '/dashboard/products', label: 'Products', icon: Package, action: Action.VIEW_PRODUCTS },
+    { href: '/dashboard/warehouses', label: 'Warehouses', icon: Building, action: Action.VIEW_WAREHOUSES },
     { href: '/dashboard/production', label: 'Production', icon: Truck, action: Action.VIEW_PRODUCTION },
     { href: '/dashboard/purchasing', label: 'Purchasing', icon: ShoppingCart, action: Action.VIEW_PURCHASING },
     { href: '/dashboard/planning', label: 'Planning', icon: CalendarClock, action: Action.VIEW_PLANNING },

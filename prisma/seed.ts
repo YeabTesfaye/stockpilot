@@ -95,8 +95,6 @@ async function main() {
     const samR = await mkUser('Sam Okonkwo', 'sam@example.test');
     const alanR = await mkUser('Alan Turing', 'alan@beta.test');
     const katherineR = await mkUser('Katherine Johnson', 'katherine@beta.test');
-    await client!.query('SELECT 1'); // drain prior command queue
-
     const membership = (
       tenantId: string,
       userId: string,
@@ -117,14 +115,61 @@ async function main() {
     await membership(betaId, katherineR.rows[0].id, 'VIEWER');
     await membership(betaId, samR.rows[0].id, 'VIEWER');
 
+    // --- catalog seed: office chair example (CHAIR-001) ---
+    // Materials (all under Acme Manufacturing)
+    const mkMaterial = (id: string, name: string, sku: string, unit: string, minStock: number) =>
+      client!.query(
+        `INSERT INTO public.materials (id, tenant_id, name, sku, unit, min_stock, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, now(), now())`,
+        [id, acmeId, name, sku, unit, minStock],
+      );
+
+    const seatId = randomUUID();
+    await mkMaterial(seatId, 'Seat', 'SEAT-001', 'pcs', 20);
+    const backrestId = randomUUID();
+    await mkMaterial(backrestId, 'Backrest', 'BACK-001', 'pcs', 20);
+    const wheelsId = randomUUID();
+    await mkMaterial(wheelsId, 'Wheels', 'WHL-001', 'pcs', 50);
+    const cylinderId = randomUUID();
+    await mkMaterial(cylinderId, 'Gas Cylinder', 'CYL-001', 'pcs', 10);
+    const screwsId = randomUUID();
+    await mkMaterial(screwsId, 'Screws (M6)', 'SCR-M6', 'pcs', 200);
+    const armrestId = randomUUID();
+    await mkMaterial(armrestId, 'Armrest Pair', 'ARM-001', 'pcs', 15);
+
+    // Product
+    const productId = randomUUID();
+    await client!.query(
+      `INSERT INTO public.products (id, tenant_id, name, sku, description, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, now(), now())`,
+      [productId, acmeId, 'Executive Chair', 'CHAIR-001', 'Ergonomic office chair with adjustable height and armrests'],
+    );
+
+    // BOM items
+    const mkBom = (productId: string, materialId: string, quantity: number, unit: string) =>
+      client!.query(
+        `INSERT INTO public.bom_items (id, product_id, material_id, quantity, unit, created_at)
+         VALUES ($1, $2, $3, $4, $5, now())`,
+        [randomUUID(), productId, materialId, quantity, unit],
+      );
+
+    await mkBom(productId, seatId, 1, 'pcs');
+    await mkBom(productId, backrestId, 1, 'pcs');
+    await mkBom(productId, wheelsId, 5, 'pcs');
+    await mkBom(productId, cylinderId, 1, 'pcs');
+    await mkBom(productId, screwsId, 8, 'pcs');
+    await mkBom(productId, armrestId, 1, 'pcs');
+
     // --- report ---
-    const [tRow, uRow, mRow] = await Promise.all([
-      client.query(`SELECT count(*) AS c FROM public.tenants`),
-      client.query(`SELECT count(*) AS c FROM public.users`),
-      client.query(`SELECT count(*) AS c FROM public.memberships`),
-    ]);
+    const tRow = await client!.query(`SELECT count(*) AS c FROM public.tenants`);
+    const uRow = await client!.query(`SELECT count(*) AS c FROM public.users`);
+    const mRow = await client!.query(`SELECT count(*) AS c FROM public.memberships`);
+    const matRow = await client!.query(`SELECT count(*) AS c FROM public.materials`);
+    const prodRow = await client!.query(`SELECT count(*) AS c FROM public.products`);
+    const bomRow = await client!.query(`SELECT count(*) AS c FROM public.bom_items`);
     console.log(
-      `Seed complete: ${tRow.rows[0].c} tenants, ${uRow.rows[0].c} users, ${mRow.rows[0].c} memberships. ` +
+      `Seed complete: ${tRow.rows[0].c} tenants, ${uRow.rows[0].c} users, ${mRow.rows[0].c} memberships, ` +
+        `${matRow.rows[0].c} materials, ${prodRow.rows[0].c} products, ${bomRow.rows[0].c} bom_items. ` +
         `Dev password for all accounts: ${PASSWORD}`,
     );
   } finally {

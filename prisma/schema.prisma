@@ -54,3 +54,70 @@ model Session {
 
   @@map("sessions")
 }
+
+// ── Catalog entities (Day 4) ──────────────────────────────────────────────
+// All catalog tables are tenant-owned: every row carries tenant_id and is
+// RLS-protected by the policies in prisma/policies.sql. SKU uniqueness is
+// scoped per tenant (the unique constraint includes tenant_id).
+
+model Material {
+  id          String   @id @default(uuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    String   @map("tenant_id")
+  name        String   @map("name")
+  sku         String   @map("sku")
+  description String?  @map("description")
+  unit        String   @map("unit")
+  minStock    Int      @default(0) @map("min_stock")
+  createdAt   TimestamptzString @default(now()) @map("created_at")
+  updatedAt   temporal.updatedAtString() @map("updated_at")
+
+  @@unique([tenantId, sku])
+  @@map("materials")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    String   @map("tenant_id")
+  name        String   @map("name")
+  sku         String   @map("sku")
+  description String?  @map("description")
+  createdAt   TimestamptzString @default(now()) @map("created_at")
+  updatedAt   temporal.updatedAtString() @map("updated_at")
+
+  // Reverse side of the BOM relationship.
+  bomItems    BomItem[]
+
+  @@unique([tenantId, sku])
+  @@map("products")
+}
+
+model Warehouse {
+  id          String   @id @default(uuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    String   @map("tenant_id")
+  name        String   @map("name")
+  code        String?  @map("code")
+  address     String?  @map("address")
+  createdAt   TimestamptzString @default(now()) @map("created_at")
+  updatedAt   temporal.updatedAtString() @map("updated_at")
+
+  @@map("warehouses")
+}
+
+// Bill of materials: which materials go into a product, and how many.
+// A product may have many BOM lines; each line points at one material.
+model BomItem {
+  id          String   @id @default(uuid())
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId   String   @map("product_id")
+  material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  materialId  String   @map("material_id")
+  quantity    Float    @map("quantity")
+  unit        String   @map("unit")
+  createdAt   TimestamptzString @default(now()) @map("created_at")
+
+  @@unique([productId, materialId])
+  @@map("bom_items")
+}

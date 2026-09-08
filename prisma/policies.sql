@@ -33,7 +33,14 @@
 -- When a new tenant-owned table is added, add an ENABLE ROW LEVEL SECURITY
 -- line here and a corresponding policy in section 3.
 
+-- Enable RLS on every tenant-owned table. Add a line here whenever a new
+-- tenant-owned table is added to the schema.
+
 ALTER TABLE memberships ENABLE ROW LEVEL SECURITY;
+ALTER TABLE materials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE warehouses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bom_items ENABLE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- 3. Per-table policies: rows visible only when tenant_id matches the session
@@ -60,6 +67,31 @@ ALTER TABLE memberships ENABLE ROW LEVEL SECURITY;
 CREATE POLICY memberships_tenant_isolation ON memberships
   FOR ALL
   USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+
+-- materials: a row is visible only to members of its tenant.
+CREATE POLICY materials_tenant_isolation ON materials
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+
+-- products: a row is visible only to members of its tenant.
+CREATE POLICY products_tenant_isolation ON products
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+
+-- warehouses: a row is visible only to members of its tenant.
+CREATE POLICY warehouses_tenant_isolation ON warehouses
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+
+-- bom_items: a row is visible only to members of its tenant (via its product).
+CREATE POLICY bom_items_tenant_isolation ON bom_items
+  FOR ALL
+  USING (
+    product_id IN (
+      SELECT id FROM products
+      WHERE tenant_id = current_setting('app.current_tenant_id', true)::text
+    )
+  );
 
 -- ---------------------------------------------------------------------------
 -- 4. Footnotes

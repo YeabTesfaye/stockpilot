@@ -21,11 +21,20 @@ export const Action = {
   RELEASE_STOCK: 'release_stock',
   TRANSFER_STOCK: 'transfer_stock',
 
-  // Product management
+  // Catalog (Day 4)
+  CREATE_MATERIAL: 'create_material',
+  UPDATE_MATERIAL: 'update_material',
+  DELETE_MATERIAL: 'delete_material',
+  VIEW_MATERIALS: 'view_materials',
   CREATE_PRODUCT: 'create_product',
   UPDATE_PRODUCT: 'update_product',
+  DELETE_PRODUCT: 'delete_product',
   CREATE_BOM: 'create_bom',
   UPDATE_BOM: 'update_bom',
+  CREATE_WAREHOUSE: 'create_warehouse',
+  UPDATE_WAREHOUSE: 'update_warehouse',
+  DELETE_WAREHOUSE: 'delete_warehouse',
+  VIEW_WAREHOUSES: 'view_warehouses',
 
   // Production
   CREATE_PRODUCTION_ORDER: 'create_production_order',
@@ -116,9 +125,32 @@ export const PERMISSIONS: Record<Action, Role[]> = {
     Role.WAREHOUSE_STAFF,
   ],
 
+  // Catalog (Day 4) — production manager and above for create/update; everyone can view
+  [Action.VIEW_MATERIALS]: [
+    Role.OWNER,
+    Role.PRODUCTION_MANAGER,
+    Role.PURCHASING,
+    Role.WAREHOUSE_STAFF,
+    Role.VIEWER,
+  ],
+  [Action.CREATE_MATERIAL]: [Role.OWNER, Role.PRODUCTION_MANAGER],
+  [Action.UPDATE_MATERIAL]: [Role.OWNER, Role.PRODUCTION_MANAGER],
+  [Action.DELETE_MATERIAL]: [Role.OWNER, Role.PRODUCTION_MANAGER],
+  [Action.VIEW_WAREHOUSES]: [
+    Role.OWNER,
+    Role.PRODUCTION_MANAGER,
+    Role.PURCHASING,
+    Role.WAREHOUSE_STAFF,
+    Role.VIEWER,
+  ],
+  [Action.CREATE_WAREHOUSE]: [Role.OWNER, Role.PRODUCTION_MANAGER],
+  [Action.UPDATE_WAREHOUSE]: [Role.OWNER, Role.PRODUCTION_MANAGER],
+  [Action.DELETE_WAREHOUSE]: [Role.OWNER, Role.PRODUCTION_MANAGER],
+
   // Product management — production manager and above
   [Action.CREATE_PRODUCT]: [Role.OWNER, Role.PRODUCTION_MANAGER],
   [Action.UPDATE_PRODUCT]: [Role.OWNER, Role.PRODUCTION_MANAGER],
+  [Action.DELETE_PRODUCT]: [Role.OWNER, Role.PRODUCTION_MANAGER],
   [Action.CREATE_BOM]: [Role.OWNER, Role.PRODUCTION_MANAGER],
   [Action.UPDATE_BOM]: [Role.OWNER, Role.PRODUCTION_MANAGER],
 

@@ -1,112 +1,109 @@
-# Day 3 — Role-Based Access Control
+## Day 4 — Catalog: Materials, Products, Warehouses
 
 **Status:** implemented and verified.
 
-## Decision
+### Decision
 
-Add a server-side RBAC layer with a single `can(user, action, resource)` entry
-point, backed by a permission matrix that maps each action to the set of roles
-that may perform it. Role check everywhere — backend endpoints, API routes, and
-the frontend sidebar/menus all go through the same `can()` / `canRole()` functions
-so the UI stays consistent with enforcement.
+Add a catalog layer with three tenant-owned entities — `Material`, `Product`, `Warehouse` — backed by CRUD API routes and list pages with create forms. SKU uniqueness is scoped per tenant (`UNIQUE(tenant_id, sku)`). Products carry a bill of materials (BOM) as a junction table (`bom_items`) linking materials to products with quantity and unit.
 
-## Why a single `can()` and not scatter `if (role === 'OWNER')` everywhere
+### Why per-tenant SKU uniqueness
 
-Scattered role checks duplicate logic, drift out of sync, and are easy to forget
-on a new endpoint. A single `can()` with a declarative permission matrix means:
-- adding a new action is one line in `permissions.ts`;
-- changing which roles may perform an action is one edit in the matrix;
-- the frontend and backend import the same `Action` enum and `can()` so they
-  cannot disagree.
+A SKU like `CHAIR-001` means different things to different tenants. Enforcing uniqueness only within `(tenant_id, sku)` lets every tenant use their own numbering scheme without collisions across the platform. The same physical product code can exist in Acme and Beta without conflict.
 
-## What we changed
+### Why a separate BOM junction table
 
-### `server/rabc/roles.ts` (new)
+A product's bill of materials is a many-to-many between products and materials with a quantity. A junction table (`bom_items`) with `(product_id, material_id)` unique constraint prevents duplicate material lines on the same product, and the quantity+unit columns capture how many of each material go into one unit of the product.
 
-Role enum mirrored from the Prisma schema, plus `ROLE_HIERARCHY` (OWNER=5 →
-VIEWER=1) and `roleGte(role, minRole)` for "at least this powerful" checks.
+### What we changed
 
-### `server/rabc/permissions.ts` (new)
+#### `prisma/schema.prisma` (extended)
 
-`Action` enum (coarse-grained operations) and `PERMISSIONS: Record<Action, Role[]>`
-— the permission matrix. Today ~30 actions across dashboard navigation, stock
-operations, product/BOM management, production, purchasing, and admin.
+- `Material` — name, SKU (unique per tenant), optional description, unit, min stock threshold
+- `Product` — name, SKU (unique per tenant), optional description; reverse side `bomItems`
+- `Warehouse` — name, optional code, optional address
+- `BomItem` — junction: product + material + quantity + unit; unique on `(product_id, material_id)`
 
-### `server/rabc/can.ts` (new)
+All four tables carry `tenant_id` + foreign key to `tenants` with `ON DELETE CASCADE`.
 
-`can(bindings, action, resource?)` — the single entry point. Returns true when
-any of the user's role bindings includes a role in the allowed set for the
-action. `resource` is accepted for future resource-level checks but currently
-unused (all authorization today is role + action). Also exports `canRole(role,
-action)` for convenience and `highestRole(bindings)`.
+#### `prisma/policies.sql` (extended)
 
-### `server/auth/session.ts`
+RLS policies added for `materials`, `products`, `warehouses`, and `bom_items` — same pattern as Day 2: `tenant_id = current_setting('app.current_tenant_id')`. The `bom_items` policy uses a subquery on `products` since the table doesn't have its own `tenant_id` column.
 
-`SessionUser` now includes `roleBindings: readonly RoleBinding[]` — the user's
-roles across all their tenant memberships. Populated in `getSessionUser()` from
-the memberships query.
+#### `server/model/materials.ts` (new)
 
-### `app/api/auth/can/route.ts` (new)
+CRUD for materials. SKU conflict checked at create and update time (query for existing SKU within the tenant, enforced by RLS scoping). `tenantId` passed explicitly from the API route.
 
-GET endpoint that accepts `?action=...` and returns `{ allowed: boolean }`. Used
-by the frontend to gate UI and by the break test to confirm enforcement.
+#### `server/model/products.ts` (new)
 
-### `app/api/admin/users/route.ts` (new)
+CRUD for products with BOM lines. `listProducts` and `getProduct` eagerly load BOM items with material names. `addBomItem` / `removeBomItem` manage the junction. SKU conflict checked same as materials.
 
-Owner-only endpoint. Returns 403 for any non-owner role — this is the Day 3 break
-task endpoint.
+#### `server/model/warehouses.ts` (new)
 
-### `components/role-gate.tsx` (new)
+CRUD for warehouses — simpler than materials (no SKU), same tenant-scoped pattern.
 
-Client component that renders children only when the current user holds one of the
-given roles and (optionally) can perform the given action. Used in the user menu
-to show "Audit log" only to owners.
+#### `app/api/materials/` (new)
 
-### `components/user-menu.tsx` (new)
+- `GET /api/materials` — list, gated by `VIEW_MATERIALS`
+- `POST /api/materials` — create, gated by `CREATE_MATERIAL`
+- `GET/PUT/DELETE /api/materials/[id]` — read/update/delete, gated by respective actions
 
-DropdownMenu-based user menu (Radix UI) with avatar, profile, settings, audit log
-(owner only), and sign out.
+#### `app/api/products/` (new)
 
-### `app/(dashboard)/layout.tsx`
+- `GET /api/products` — list with BOM, gated by `VIEW_PRODUCTS`
+- `POST /api/products` — create, gated by `CREATE_PRODUCT`
+- `GET/PUT/DELETE /api/products/[id]` — read/update/delete
+- `POST /api/products/[id]/bom` — add BOM line, gated by `CREATE_BOM`
+- `DELETE /api/products/[id]/bom?materialId=...` — remove BOM line, gated by `UPDATE_BOM`
 
-Replaced the flat header with a sidebar that lists nav items filtered by the
-current user's roles via `canRole()`. Admin section (Users, Audit log) only shows
-for owners.
+#### `app/api/warehouses/` (new)
 
-### `components/session-provider.tsx` (new)
+- `GET /api/warehouses` — list, gated by `VIEW_WAREHOUSES`
+- `POST /api/warehouses` — create, gated by `CREATE_WAREHOUSE`
+- `GET/PUT/DELETE /api/warehouses/[id]` — read/update/delete
 
-Client-side session context that fetches `/api/auth/me` on mount and refreshes.
-Mounted in `app/layout.tsx` so `useSession()` works anywhere.
+#### `server/rabc/permissions.ts` (extended)
 
-### `.env` / `.env.example`
+New actions: `VIEW_MATERIALS`, `CREATE_MATERIAL`, `UPDATE_MATERIAL`, `DELETE_MATERIAL`, `VIEW_WAREHOUSES`, `CREATE_WAREHOUSE`, `UPDATE_WAREHOUSE`, `DELETE_WAREHOUSE`, `CREATE_PRODUCT`, `UPDATE_PRODUCT`, `DELETE_PRODUCT`. View actions granted to all roles; create/update/delete granted to OWNER + PRODUCTION_MANAGER.
 
-No changes needed — the app role already exists from Day 2.
+#### `app/dashboard/layout.tsx` (updated)
 
-## Break task — confirm Warehouse Staff gets 403 on an Owner-only action
+Added Materials, Products, and Warehouses nav items gated by their respective view actions.
 
-**Endpoint:** `GET /api/admin/users` (Action.MANAGE_USERS, Owner only)
+#### `components/ui/` (new primitives)
 
-**As Warehouse Staff (grace@acme.test, role WAREHOUSE_STAFF):**
+- `data-table.tsx` — reusable table with columns, row actions dropdown
+- `sheet.tsx` — Radix Dialog-based slide-over panel for create/edit forms
+- `status-badge.tsx` — green/amber/red pill for stock health / status
+- `page-header.tsx` — title + description + optional action buttons
+- `select.tsx` — Radix Select dropdown (used in BOM material picker)
+- `dropdown-menu.tsx` — Radix DropdownMenu wrapper (used by DataTable row actions)
+
+#### `app/(root)/inventory/materials/page.tsx` (new)
+
+Materials list page: PageHeader with "Add material" button, DataTable with SKU/name/unit/stock-health columns, Sheet-based create form with name/SKU/description/unit/minStock fields. Row actions: edit (navigates to dashboard detail), delete.
+
+#### `app/(root)/products/page.tsx` (new)
+
+Products list page: PageHeader with "Add product" button, DataTable with SKU/name/BOM/status columns. Create flow is two-step: create the product, then a BOM editor Sheet opens pre-loaded with the new product. BOM editor lists existing lines with remove buttons, and an "Add material" section with a material dropdown + quantity field.
+
+#### `app/(root)/warehouses/page.tsx` (new)
+
+Warehouses list page: PageHeader with "Add warehouse" button, DataTable with name/code/address columns, Sheet-based create form.
+
+#### `prisma/seed.ts` (extended)
+
+Added the chair example for Acme Manufacturing:
+- 6 materials: Seat (SEAT-001), Backrest (BACK-001), Wheels (WHL-001), Gas Cylinder (CYL-001), Screws M6 (SCR-M6), Armrest Pair (ARM-001)
+- 1 product: Executive Chair (CHAIR-001) with description
+- 6 BOM items: Seat×1, Backrest×1, Wheels×5, Gas Cylinder×1, Screws×8, Armrest Pair×1
+
+### Seed verification
 
 ```bash
-curl -b stockpilot_session=<grace-token> http://localhost:3000/api/admin/users
+pnpm db:seed
+# Seed complete: 2 tenants, 6 users, 6 memberships, 6 materials, 1 products, 6 bom_items.
 ```
 
-Expected: `403 Forbidden` with `{ "error": "Forbidden: you do not have permission to manage users" }`.
-
-**As Owner (ada@acme.test, role OWNER):**
-
-```bash
-curl -b stockpilot_session=<ada-token> http://localhost:3000/api/admin/users
-```
-
-Expected: `200 OK` with `{ "ok": true, "roleThatWasChecked": ["OWNER"], ... }`.
-
-## Verification checklist
-
-- [ ] `pnpm exec tsc --noEmit` passes on all new RBAC files
-- [ ] `GET /api/admin/users` as Warehouse Staff → 403
-- [ ] `GET /api/admin/users` as Owner → 200
-- [ ] Sidebar in layout only shows nav items the current role may access
-- [ ] User menu "Audit log" item only visible to Owner
-- [ ] `RoleGate` hides children when user lacks the role/action
+Verified in psql:
+- 6 materials with correct SKUs and min stock values
+- CHAIR-001 product with 6 BOM lines linking to the correct materials with correct quantities
