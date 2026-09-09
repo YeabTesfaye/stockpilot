@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, Building } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, RowActions } from '@/components/ui/data-table';
 import { Sheet } from '@/components/ui/sheet';
@@ -127,7 +127,7 @@ export default function WarehousesPage() {
           keyField="id"
           renderRowActions={(row) => (
             <RowActions
-              onEdit={() => router.push(`/dashboard/warehouses/${row.id}`)}
+              onEdit={() => router.push(`/warehouses/${row.id}`)}
               onDelete={() => handleDelete(row.id)}
             />
           )}

@@ -5,9 +5,7 @@ import { useParams } from 'next/navigation';
 import { ArrowLeft, Plus, Trash2, Package, RefreshCw, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { PageHeader } from '@/components/ui/page-header';
-import { StatusBadge } from '@/components/ui/status-badge';
 
 interface BomItem {
   id: string;
@@ -51,27 +49,25 @@ export default function BomEditorPage() {
   // New row form state
   const [newRows, setNewRows] = React.useState<NewBomRow[]>([]);
 
-  React.useEffect(() => {
-    if (!params.id) return;
-    fetchBom();
-  }, [params.id]);
-
-  async function fetchBom() {
+  const fetchBom = React.useCallback(async () => {
     if (!params.id) return;
     setLoading(true);
     setError(null);
     try {
-      const [bomRes, prodRes] = await Promise.all([
+      const [bomRes, prodRes, matsRes] = await Promise.all([
         fetch(`/api/products/${params.id}/bom/versions`),
+        fetch(`/api/products/${params.id}`),
         fetch('/api/materials'),
       ]);
       if (!bomRes.ok) throw new Error('Failed to load BOM');
       const bomJson: BomApiResponse = await bomRes.json();
       setBomData(bomJson);
-      // Fetch current BOM items
-      const prodData = await (await fetch(`/api/products/${params.id}`)).json();
-      setItems(prodData.bomItems ?? []);
-      const matsRes = await fetch('/api/materials');
+
+      if (prodRes.ok) {
+        const prodData = await prodRes.json();
+        setItems(prodData.bomItems ?? []);
+      }
+
       if (matsRes.ok) {
         const mats: typeof materials = await matsRes.json();
         setMaterials(mats);
@@ -81,7 +77,13 @@ export default function BomEditorPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [params.id]);
+
+  React.useEffect(() => {
+    if (!params.id) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetchBom's setState calls are deferred (post-await); it's also reused by handleSave/handleRevert, so it can't be inlined here.
+    fetchBom();
+  }, [params.id, fetchBom]);
 
   function addNewRow() {
     setNewRows((prev) => [
@@ -106,7 +108,8 @@ export default function BomEditorPage() {
     setError(null);
 
     // Combine existing items + new rows
-    const allItems = [          ...items.map((i) => ({ materialId: i.materialId, quantityPerUnit: i.quantity, unit: i.unit })),
+    const allItems = [
+      ...items.map((i) => ({ materialId: i.materialId, quantityPerUnit: i.quantity, unit: i.unit })),
       ...newRows
         .filter((r) => r.materialId && parseFloat(r.quantity) > 0)
         .map((r) => ({
@@ -320,7 +323,7 @@ export default function BomEditorPage() {
 
         {newRows.length === 0 ? (
           <div className="px-4 py-6 text-center">
-            <p className="text-sm text-muted-foreground">No added materials. Click "Add row" to start.</p>
+            <p className="text-sm text-muted-foreground">{"No added materials. Click \"Add row\" to start."}</p>
           </div>
         ) : (
           <div className="p-4 space-y-3">
@@ -372,7 +375,7 @@ export default function BomEditorPage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                  className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
                   onClick={() => removeNewRow(index)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />

@@ -41,6 +41,8 @@ ALTER TABLE materials ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE warehouses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bom_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stock_movements ENABLE ROW LEVEL SECURITY;
 
 -- ---------------------------------------------------------------------------
 -- 3. Per-table policies: rows visible only when tenant_id matches the session
@@ -107,6 +109,16 @@ CREATE POLICY bom_items_tenant_isolation ON bom_items
       )
     )
   );
+
+-- audit_logs: a row is visible only to members of its tenant.
+CREATE POLICY audit_logs_tenant_isolation ON audit_logs
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+
+-- stock_movements: a row is visible only to members of its tenant.
+CREATE POLICY stock_movements_tenant_isolation ON stock_movements
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
 
 -- ---------------------------------------------------------------------------
 -- 4. Footnotes

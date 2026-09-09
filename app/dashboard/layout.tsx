@@ -14,12 +14,10 @@ import { UserMenu } from '@/components/user-menu';
 import {
   Boxes,
   Package,
-  Truck,
-  ShoppingCart,
-  CalendarClock,
   ChevronRight,
   ShieldCheck,
   Building,
+  History,
 } from 'lucide-react';
 
 export default async function DashboardLayout({
@@ -50,7 +48,7 @@ export default async function DashboardLayout({
       return roleBindings.some((b) => canRole(b.role, item.action));
     });
 
-  const showAdminSection = false; // Admin pages not wired yet
+  const showAdminSection = roleBindings.some((b) => canRole(b.role, Action.MANAGE_USERS));
 
   return (
     <div className="flex min-h-full flex-1">

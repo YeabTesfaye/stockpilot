@@ -234,7 +234,7 @@ export default function ProductsPage() {
           keyField="id"
           renderRowActions={(row) => (
             <RowActions
-              onEdit={() => router.push(`/dashboard/products/${row.id}`)}
+              onEdit={() => router.push(`/products/${row.id}`)}
               onDelete={() => handleDelete(row.id)}
             />
           )}

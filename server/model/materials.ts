@@ -7,20 +7,22 @@ export type Material = {
   description: string | null;
   unit: string;
   minStock: number;
+  currentStock: number;
+  reservedQty: number;
   createdAt: string;
   updatedAt: string;
 };
 
 export async function listMaterials(): Promise<Material[]> {
   const rows = await db.orm.public.Material
-    .select('id', 'name', 'sku', 'description', 'unit', 'minStock', 'createdAt', 'updatedAt')
+    .select('id', 'name', 'sku', 'description', 'unit', 'minStock', 'currentStock', 'reservedQty', 'createdAt', 'updatedAt')
     .all();
   return rows.map(mapMaterial);
 }
 
 export async function getMaterial(id: string): Promise<Material | null> {
   const row = await db.orm.public.Material
-    .select('id', 'name', 'sku', 'description', 'unit', 'minStock', 'createdAt', 'updatedAt')
+    .select('id', 'name', 'sku', 'description', 'unit', 'minStock', 'currentStock', 'reservedQty', 'createdAt', 'updatedAt')
     .where((m) => m.id.eq(id))
     .first();
   return row ? mapMaterial(row) : null;
@@ -32,6 +34,8 @@ export async function createMaterial(tenantId: string, input: {
   description?: string;
   unit: string;
   minStock?: number;
+  currentStock?: number;
+  reservedQty?: number;
 }): Promise<Material> {
   const existing = await db.orm.public.Material
     .where((m) => m.sku.eq(input.sku))
@@ -46,6 +50,8 @@ export async function createMaterial(tenantId: string, input: {
     description: input.description ?? null,
     unit: input.unit,
     minStock: input.minStock ?? 0,
+    currentStock: input.currentStock ?? 0,
+    reservedQty: input.reservedQty ?? 0,
   });
   return mapMaterial(row);
 }
@@ -58,6 +64,8 @@ export async function updateMaterial(
     description?: string | null;
     unit?: string;
     minStock?: number;
+    currentStock?: number;
+    reservedQty?: number;
   },
 ): Promise<Material> {
   const existing = await db.orm.public.Material
@@ -80,10 +88,12 @@ export async function updateMaterial(
       description: input.description !== undefined ? (input.description ?? existing.description) : existing.description,
       unit: input.unit ?? existing.unit,
       minStock: input.minStock ?? existing.minStock,
+      currentStock: input.currentStock ?? existing.currentStock,
+      reservedQty: input.reservedQty ?? existing.reservedQty,
     });
 
   const updated = await db.orm.public.Material
-    .select('id', 'name', 'sku', 'description', 'unit', 'minStock', 'createdAt', 'updatedAt')
+    .select('id', 'name', 'sku', 'description', 'unit', 'minStock', 'currentStock', 'reservedQty', 'createdAt', 'updatedAt')
     .where((m) => m.id.eq(id))
     .first();
   return updated ? mapMaterial(updated) : mapMaterial(existing);
@@ -104,6 +114,8 @@ function mapMaterial(row: {
   description: string | null;
   unit: string;
   minStock: number;
+  currentStock: number;
+  reservedQty: number;
   createdAt: string;
   updatedAt: string;
 }): Material {
@@ -114,6 +126,8 @@ function mapMaterial(row: {
     description: row.description,
     unit: row.unit,
     minStock: row.minStock,
+    currentStock: row.currentStock,
+    reservedQty: row.reservedQty,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

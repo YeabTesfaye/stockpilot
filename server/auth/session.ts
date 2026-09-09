@@ -119,14 +119,14 @@ export async function getSessionUser(token: string): Promise<SessionUser | null>
     tenant: { id: string; name: string };
   }> = [];
   for (const b of roleBindings) {
-    const tid = String(b.tenantId ?? '');
-    const user = tenantById.get(tid as string) ?? null;
+    const tenantId = String(b.tenantId ?? '');
+    const tenantRow = tenantById.get(tenantId) ?? null;
     memberships.push({
-      id: 'stored',
+      id: tenantId,
       role: b.role,
       tenant: {
-        id: tid,
-        name: user?.name ?? 'Unknown tenant',
+        id: tenantId,
+        name: tenantRow?.name ?? 'Unknown tenant',
       },
     });
   }

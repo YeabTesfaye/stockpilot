@@ -8,6 +8,27 @@ enum Role {
   VIEWER
 }
 
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  RESTORE
+  LOGIN
+  LOGOUT
+  PASSWORD_CHANGE
+}
+
+enum MovementType {
+  PURCHASE
+  SALE
+  RETURN
+  DAMAGE
+  TRANSFER
+  ADJUSTMENT
+  RESERVATION
+  RESERVATION_RELEASE
+}
+
 model Tenant {
   id        String            @id @default(uuid())
   name      String
@@ -69,6 +90,8 @@ model Material {
   description String?  @map("description")
   unit        String   @map("unit")
   minStock    Int      @default(0) @map("min_stock")
+  currentStock  Int @default(0) @map("current_stock")
+  reservedQty   Int @default(0) @map("reserved_qty")
   createdAt   TimestamptzString @default(now()) @map("created_at")
   updatedAt   temporal.updatedAtString() @map("updated_at")
 
@@ -138,4 +161,57 @@ model BomItem {
   createdAt         TimestamptzString @default(now()) @map("created_at")
 
   @@map("bom_items")
+}
+
+// ── Audit log (Day 7) ────────────────────────────────────────────────────
+// Every mutating action the application performs is recorded here so there
+// is a tamper-evident trail: who did what, to which resource, when. The log
+// is tenant-scoped so each tenant only sees its own entries.
+//
+// Writes are centralized through server/audit/log.ts so the caller does not
+// need to know the schema. The audit table itself is RLS-protected.
+
+model AuditLog {
+  id           String        @id @default(uuid())
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId     String        @map("tenant_id")
+  actorUserId  String        @map("actor_user_id")
+  actorName    String        @map("actor_name")
+  action       AuditAction   @map("action")
+  resourceType String        @map("resource_type")
+  resourceId   String        @map("resource_id")
+  description  String?       @map("description")
+  snapshot     String? @map("snapshot")
+  createdAt    TimestamptzString @default(now()) @map("created_at")
+
+  @@index([tenantId, resourceType, resourceId])
+  @@index([tenantId, createdAt])
+  @@map("audit_logs")
+}
+
+// ── Inventory movement ledger (Day 8) ────────────────────────────────────
+// Immutable ledger: every change to on-hand stock is recorded as a row here.
+// The only way stock changes is through recordMovement() in
+// server/inventory/recordMovement.ts — application code never UPDATEs
+// material.current_stock directly. The current on-hand for a material is
+// derived by summing movements, and is also mirrored on Material.current_stock
+// for fast reads (kept in sync by recordMovement).
+
+model StockMovement {
+  id            String         @id @default(uuid())
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId      String         @map("tenant_id")
+  material      Material       @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  materialId    String         @map("material_id")
+  warehouse     Warehouse?     @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  warehouseId   String?        @map("warehouse_id")
+  type          MovementType   @map("type")
+  quantity      Int      @map("quantity")
+  reference     String?  @map("reference")
+  referenceId   String?  @map("reference_id")
+  createdAt     TimestamptzString @default(now()) @map("created_at")
+
+  @@index([tenantId, materialId])
+  @@index([tenantId, warehouseId])
+  @@map("stock_movements")
 }

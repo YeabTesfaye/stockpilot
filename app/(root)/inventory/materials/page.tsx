@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Plus, Package } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
 import { DataTable, RowActions } from '@/components/ui/data-table';
 import { Sheet } from '@/components/ui/sheet';
