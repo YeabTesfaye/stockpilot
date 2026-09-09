@@ -35,24 +35,22 @@ export default async function DashboardLayout({
   const { user, memberships, roleBindings } = session;
 
   // Collect the set of roles the user holds (across all tenants).
-  const roles = new Set(roleBindings.map((b) => b.role));
+  // const roles = new Set(roleBindings.map((b) => b.role));
 
   // Precompute visible nav items from the permission matrix.
+  // Only routes that have pages today are included; Production, Purchasing,
+  // Planning, and Admin pages are wired later and re-added here when ready.
   const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: Boxes, action: Action.VIEW_DASHBOARD },
-    { href: '/dashboard/inventory', label: 'Inventory', icon: Package, action: Action.VIEW_INVENTORY },
-    { href: '/dashboard/inventory/materials', label: 'Materials', icon: Package, action: Action.VIEW_MATERIALS },
-    { href: '/dashboard/products', label: 'Products', icon: Package, action: Action.VIEW_PRODUCTS },
-    { href: '/dashboard/warehouses', label: 'Warehouses', icon: Building, action: Action.VIEW_WAREHOUSES },
-    { href: '/dashboard/production', label: 'Production', icon: Truck, action: Action.VIEW_PRODUCTION },
-    { href: '/dashboard/purchasing', label: 'Purchasing', icon: ShoppingCart, action: Action.VIEW_PURCHASING },
-    { href: '/dashboard/planning', label: 'Planning', icon: CalendarClock, action: Action.VIEW_PLANNING },
+    { href: '/', label: 'Dashboard', icon: Boxes, action: Action.VIEW_DASHBOARD },
+    { href: '/inventory/materials', label: 'Materials', icon: Package, action: Action.VIEW_MATERIALS },
+    { href: '/products', label: 'Products', icon: Package, action: Action.VIEW_PRODUCTS },
+    { href: '/warehouses', label: 'Warehouses', icon: Building, action: Action.VIEW_WAREHOUSES },
   ].filter((item) => {
       // Show the nav item if the user holds ANY role that can perform the action.
       return roleBindings.some((b) => canRole(b.role, item.action));
     });
 
-  const showAdminSection = roleBindings.some((b) => canRole(b.role, Action.MANAGE_USERS));
+  const showAdminSection = false; // Admin pages not wired yet
 
   return (
     <div className="flex min-h-full flex-1">
@@ -86,8 +84,8 @@ export default async function DashboardLayout({
             </p>
             <nav className="space-y-1">
               {[
-                { href: '/dashboard/admin/users', label: 'Users', action: Action.MANAGE_USERS },
-                { href: '/dashboard/admin/audit', label: 'Audit log', action: Action.VIEW_AUDIT_LOG },
+                { href: '/admin/users', label: 'Users', action: Action.MANAGE_USERS },
+                { href: '/admin/audit', label: 'Audit log', action: Action.VIEW_AUDIT_LOG },
               ]
                 .filter((item) => canRole(Role.OWNER, item.action))
                 .map((item) => (

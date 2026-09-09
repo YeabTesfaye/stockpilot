@@ -2,25 +2,42 @@
 
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { Button } from '@/components/ui/button';
+
+function subscribe() {
+  return () => {};
+}
+
+function getClientSnapshot() {
+  return true;
+}
+
+function getServerSnapshot() {
+  return false;
+}
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
 
-  // next-themes hydrates the theme from storage only after mount — render a
-  // neutral placeholder first so the icon never flashes the wrong theme.
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
+
+  const isDark = mounted && resolvedTheme === 'dark';
 
   return (
     <Button
       variant="ghost"
       size="icon"
       aria-label="Toggle color theme"
-      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+      onClick={() =>
+        setTheme(isDark ? 'light' : 'dark')
+      }
     >
-      {mounted && resolvedTheme === 'dark' ? (
+      {isDark ? (
         <Sun className="size-4" />
       ) : (
         <Moon className="size-4" />

@@ -1,0 +1,702 @@
+[
+  {
+    "id": "rlsPolicy.public.bom_items.bom_items_tenant_isolation.drop",
+    "label": "Drop RLS policy \"bom_items_tenant_isolation\" on \"bom_items\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "rlsPolicy",
+        "name": "bom_items_tenant_isolation",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure RLS policy \"bom_items_tenant_isolation\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_policies\" WHERE (\"schemaname\" = $1 AND \"tablename\" = $2 AND \"policyname\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "bom_items",
+          "bom_items_tenant_isolation"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop RLS policy \"bom_items_tenant_isolation\"",
+        "sql": "DROP POLICY \"bom_items_tenant_isolation\" ON \"public\".\"bom_items\"",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify RLS policy \"bom_items_tenant_isolation\" is absent",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_policies\" WHERE (\"schemaname\" = $1 AND \"tablename\" = $2 AND \"policyname\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "bom_items",
+          "bom_items_tenant_isolation"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropConstraint.bom_items.bom_items_product_id_fkey",
+    "label": "Drop constraint \"bom_items_product_id_fkey\" on \"bom_items\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "bom_items_product_id_fkey",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"bom_items_product_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bom_items_product_id_fkey",
+          "public",
+          "\"public\".\"bom_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop constraint \"bom_items_product_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"bom_items\" DROP CONSTRAINT \"bom_items_product_id_fkey\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"bom_items_product_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bom_items_product_id_fkey",
+          "public",
+          "\"public\".\"bom_items\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropIndex.bom_items.bom_items_product_id_idx_22a2b7d2",
+    "label": "Drop index \"bom_items_product_id_idx_22a2b7d2\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "bom_items_product_id_idx_22a2b7d2",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bom_items_product_id_idx_22a2b7d2\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"bom_items_product_id_idx_22a2b7d2\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop index \"bom_items_product_id_idx_22a2b7d2\"",
+        "sql": "DROP INDEX \"public\".\"bom_items_product_id_idx_22a2b7d2\"",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bom_items_product_id_idx_22a2b7d2\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"bom_items_product_id_idx_22a2b7d2\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropConstraint.bom_items.bom_items_product_id_material_id_key",
+    "label": "Drop constraint \"bom_items_product_id_material_id_key\" on \"bom_items\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "bom_items_product_id_material_id_key",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"bom_items_product_id_material_id_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bom_items_product_id_material_id_key",
+          "public",
+          "\"public\".\"bom_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop constraint \"bom_items_product_id_material_id_key\"",
+        "sql": "ALTER TABLE \"public\".\"bom_items\" DROP CONSTRAINT \"bom_items_product_id_material_id_key\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"bom_items_product_id_material_id_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bom_items_product_id_material_id_key",
+          "public",
+          "\"public\".\"bom_items\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropColumn.bom_items.product_id",
+    "label": "Drop column \"product_id\" from \"bom_items\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "product_id",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"product_id\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "bom_items",
+          "product_id"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"product_id\"",
+        "sql": "ALTER TABLE \"public\".\"bom_items\" DROP COLUMN \"product_id\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"product_id\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "bom_items",
+          "product_id"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropColumn.bom_items.quantity",
+    "label": "Drop column \"quantity\" from \"bom_items\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "quantity",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"quantity\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "bom_items",
+          "quantity"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"quantity\"",
+        "sql": "ALTER TABLE \"public\".\"bom_items\" DROP COLUMN \"quantity\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"quantity\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "bom_items",
+          "quantity"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.boms",
+    "label": "Create table \"boms\"",
+    "summary": "Creates table \"boms\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "boms"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"boms\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"boms\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"boms\"",
+        "sql": "CREATE TABLE \"public\".\"boms\" (\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"effective_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"product_id\" text NOT NULL,\n  \"version\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"boms\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"boms\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.products.current_bom_id",
+    "label": "Add column \"current_bom_id\" to \"products\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "current_bom_id",
+        "table": "products"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"current_bom_id\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "products",
+          "current_bom_id"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"current_bom_id\"",
+        "sql": "ALTER TABLE \"public\".\"products\" ADD COLUMN \"current_bom_id\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"current_bom_id\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "products",
+          "current_bom_id"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.bom_items.bom_id",
+    "label": "Add column \"bom_id\" to \"bom_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "bom_id",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"bom_id\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "bom_items",
+          "bom_id"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"bom_id\"",
+        "sql": "ALTER TABLE \"public\".\"bom_items\" ADD COLUMN \"bom_id\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"bom_id\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "bom_items",
+          "bom_id"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.bom_items.quantity_per_unit",
+    "label": "Add column \"quantity_per_unit\" to \"bom_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "quantity_per_unit",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"quantity_per_unit\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "bom_items",
+          "quantity_per_unit"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"quantity_per_unit\"",
+        "sql": "ALTER TABLE \"public\".\"bom_items\" ADD COLUMN \"quantity_per_unit\" float8"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"quantity_per_unit\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "bom_items",
+          "quantity_per_unit"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bom_items.bom_items_bom_id_idx_96a0a405",
+    "label": "Create index \"bom_items_bom_id_idx_96a0a405\" on \"bom_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "bom_items_bom_id_idx_96a0a405",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bom_items_bom_id_idx_96a0a405\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"bom_items_bom_id_idx_96a0a405\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bom_items_bom_id_idx_96a0a405\"",
+        "sql": "CREATE INDEX \"bom_items_bom_id_idx_96a0a405\" ON \"public\".\"bom_items\" (\"bom_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bom_items_bom_id_idx_96a0a405\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"bom_items_bom_id_idx_96a0a405\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.boms.boms_product_id_idx_22a2b7d2",
+    "label": "Create index \"boms_product_id_idx_22a2b7d2\" on \"boms\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "boms_product_id_idx_22a2b7d2",
+        "table": "boms"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"boms_product_id_idx_22a2b7d2\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"boms_product_id_idx_22a2b7d2\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"boms_product_id_idx_22a2b7d2\"",
+        "sql": "CREATE INDEX \"boms_product_id_idx_22a2b7d2\" ON \"public\".\"boms\" (\"product_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"boms_product_id_idx_22a2b7d2\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"boms_product_id_idx_22a2b7d2\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.products.products_current_bom_id_idx_15995837",
+    "label": "Create index \"products_current_bom_id_idx_15995837\" on \"products\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "products_current_bom_id_idx_15995837",
+        "table": "products"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"products_current_bom_id_idx_15995837\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"products_current_bom_id_idx_15995837\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"products_current_bom_id_idx_15995837\"",
+        "sql": "CREATE INDEX \"products_current_bom_id_idx_15995837\" ON \"public\".\"products\" (\"current_bom_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"products_current_bom_id_idx_15995837\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"products_current_bom_id_idx_15995837\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.boms.boms_product_id_fkey",
+    "label": "Add foreign key \"boms_product_id_fkey\" on \"boms\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "boms_product_id_fkey",
+        "table": "boms"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"boms_product_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "boms_product_id_fkey",
+          "public",
+          "\"public\".\"boms\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"boms_product_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"boms\"\nADD CONSTRAINT \"boms_product_id_fkey\"\nFOREIGN KEY (\"product_id\")\nREFERENCES \"public\".\"products\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"boms_product_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "boms_product_id_fkey",
+          "public",
+          "\"public\".\"boms\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.bom_items.bom_items_bom_id_fkey",
+    "label": "Add foreign key \"bom_items_bom_id_fkey\" on \"bom_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "bom_items_bom_id_fkey",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"bom_items_bom_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bom_items_bom_id_fkey",
+          "public",
+          "\"public\".\"bom_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"bom_items_bom_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"bom_items\"\nADD CONSTRAINT \"bom_items_bom_id_fkey\"\nFOREIGN KEY (\"bom_id\")\nREFERENCES \"public\".\"boms\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"bom_items_bom_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bom_items_bom_id_fkey",
+          "public",
+          "\"public\".\"bom_items\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.products.products_current_bom_id_fkey",
+    "label": "Add foreign key \"products_current_bom_id_fkey\" on \"products\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "products_current_bom_id_fkey",
+        "table": "products"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"products_current_bom_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "products_current_bom_id_fkey",
+          "public",
+          "\"public\".\"products\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"products_current_bom_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"products\"\nADD CONSTRAINT \"products_current_bom_id_fkey\"\nFOREIGN KEY (\"current_bom_id\")\nREFERENCES \"public\".\"boms\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"products_current_bom_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "products_current_bom_id_fkey",
+          "public",
+          "\"public\".\"products\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.boms.boms_product_id_version_key",
+    "label": "Add unique constraint on \"boms\" (product_id, version)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "boms_product_id_version_key",
+        "table": "boms"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"boms_product_id_version_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "boms_product_id_version_key",
+          "public",
+          "\"public\".\"boms\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"boms_product_id_version_key\"",
+        "sql": "ALTER TABLE \"public\".\"boms\" ADD CONSTRAINT \"boms_product_id_version_key\" UNIQUE (\"product_id\", \"version\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"boms_product_id_version_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "boms_product_id_version_key",
+          "public",
+          "\"public\".\"boms\""
+        ]
+      }
+    ]
+  }
+]

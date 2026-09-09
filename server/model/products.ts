@@ -1,5 +1,5 @@
 import { db } from '../db';
-import type { Material } from './materials';
+import * as bom from './bom';
 
 export type Product = {
   id: string;
@@ -8,6 +8,8 @@ export type Product = {
   description: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Current BOM version number, or null if no BOM yet. */
+  currentBomVersion: number | null;
   bomItems: Array<{
     id: string;
     materialId: string;
@@ -30,33 +32,31 @@ export type BomItemInput = {
   unit: string;
 };
 
+function bomItemsFromBom(bomItems: bom.BomItem[]): Product['bomItems'] {
+  return bomItems.map((i) => ({
+    id: i.id,
+    materialId: i.materialId,
+    materialName: i.materialName,
+    materialSku: i.materialSku,
+    quantity: i.quantity,
+    unit: i.unit,
+  }));
+}
+
 export async function listProducts(): Promise<Product[]> {
   const rows = await db.orm.public.Product
-    .select('id', 'name', 'sku', 'description', 'createdAt', 'updatedAt')
+    .select('id', 'name', 'sku', 'description', 'createdAt', 'updatedAt', 'currentBomId')
     .all();
 
   const products: Product[] = [];
   for (const row of rows) {
-    const bom = await db.orm.public.BomItem
-      .select('id', 'quantity', 'unit', 'materialId')
-      .where((b) => b.productId.eq(row.id))
-      .all();
+    const currentVersion = row.currentBomId
+      ? await bom.maxVersion(row.id)
+      : 0;
 
-    const bomItems: Product['bomItems'] = [];
-    for (const item of bom) {
-      const mat = await db.orm.public.Material
-        .select('name', 'sku')
-        .where((m) => m.id.eq(item.materialId))
-        .first();
-      bomItems.push({
-        id: item.id,
-        materialId: item.materialId,
-        materialName: mat?.name ?? 'Unknown',
-        materialSku: mat?.sku ?? '',
-        quantity: item.quantity,
-        unit: item.unit,
-      });
-    }
+    const items = currentVersion > 0
+      ? (await bom.getCurrentBom(row.id))?.items ?? []
+      : [];
 
     products.push({
       id: row.id,
@@ -65,7 +65,8 @@ export async function listProducts(): Promise<Product[]> {
       description: row.description,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-      bomItems: bomItems,
+      currentBomVersion: currentVersion > 0 ? currentVersion : null,
+      bomItems: bomItemsFromBom(items),
     });
   }
 
@@ -74,31 +75,18 @@ export async function listProducts(): Promise<Product[]> {
 
 export async function getProduct(id: string): Promise<Product | null> {
   const row = await db.orm.public.Product
-    .select('id', 'name', 'sku', 'description', 'createdAt', 'updatedAt')
+    .select('id', 'name', 'sku', 'description', 'createdAt', 'updatedAt', 'currentBomId')
     .where((p) => p.id.eq(id))
     .first();
   if (!row) return null;
 
-  const bom = await db.orm.public.BomItem
-    .select('id', 'quantity', 'unit', 'materialId')
-    .where((b) => b.productId.eq(id))
-    .all();
+  const currentVersion = row.currentBomId
+    ? await bom.maxVersion(row.id)
+    : 0;
 
-  const bomItems: Product['bomItems'] = [];
-  for (const item of bom) {
-    const mat = await db.orm.public.Material
-      .select('name', 'sku')
-      .where((m) => m.id.eq(item.materialId))
-      .first();
-    bomItems.push({
-      id: item.id,
-      materialId: item.materialId,
-      materialName: mat?.name ?? 'Unknown',
-      materialSku: mat?.sku ?? '',
-      quantity: item.quantity,
-      unit: item.unit,
-    });
-  }
+  const items = currentVersion > 0
+    ? (await bom.getCurrentBom(row.id))?.items ?? []
+    : [];
 
   return {
     id: row.id,
@@ -107,7 +95,8 @@ export async function getProduct(id: string): Promise<Product | null> {
     description: row.description,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
-    bomItems: bomItems,
+    currentBomVersion: currentVersion > 0 ? currentVersion : null,
+    bomItems: bomItemsFromBom(items),
   };
 }
 
@@ -162,60 +151,66 @@ export async function deleteProduct(id: string): Promise<void> {
   await db.orm.public.Product.where((p) => p.id.eq(id)).delete();
 }
 
+/** Add a BOM line to the current BOM version. Creates a new BOM version if none exists. */
 export async function addBomItem(
   productId: string,
   input: BomItemInput,
-): Promise<void> {
-  const product = await db.orm.public.Product.where((p) => p.id.eq(productId)).first();
-  if (!product) throw new Error('Product not found');
-
-  const material = await db.orm.public.Material.where((m) => m.id.eq(input.materialId)).first();
-  if (!material) throw new Error('Material not found');
-
-  const existing = await db.orm.public.BomItem
-    .where({ productId, materialId: input.materialId } as never)
-    .first();
-  if (existing) throw new Error('This material is already in the BOM');
-
-  await db.orm.public.BomItem.create({
-    productId,
-    materialId: input.materialId,
-    quantity: input.quantity,
-    unit: input.unit,
-  });
-}
-
-export async function removeBomItem(productId: string, materialId: string): Promise<void> {
-  const product = await db.orm.public.Product.where((p) => p.id.eq(productId)).first();
-  if (!product) throw new Error('Product not found');
-
-  const existing = await db.orm.public.BomItem
-    .where({ productId, materialId } as never)
-    .first();
-  if (!existing) throw new Error('BOM item not found');
-
-  await db.orm.public.BomItem.where((b) => b.id.eq(existing.id)).delete();
-}
-
-export async function listMaterialsForProduct(productId: string): Promise<Array<{ id: string; name: string; sku: string; unit: string }>> {
-  const product = await db.orm.public.Product.where((p) => p.id.eq(productId)).first();
-  if (!product) throw new Error('Product not found');
-
-  const bomItems = await db.orm.public.BomItem
-    .select('materialId', 'quantity', 'unit')
-    .where((b) => b.productId.eq(productId))
-    .all();
-
-  const materials: Array<{ id: string; name: string; sku: string; unit: string }> = [];
-  for (const item of bomItems) {
-    const mat = await db.orm.public.Material
-      .select('id', 'name', 'sku', 'unit')
-      .where((m) => m.id.eq(item.materialId))
-      .first();
-    if (mat) {
-      materials.push({ id: mat.id, name: mat.name, sku: mat.sku, unit: mat.unit });
+): Promise<{ version: number }> {
+  const current = await bom.getCurrentBom(productId);
+  if (current) {
+    // Check for duplicate material in this BOM
+    const allItems = await db.orm.public.BomItem
+      .select('id', 'materialId')
+      .where((i) => i.bomId.eq(current.id))
+      .all();
+    if (allItems.some((i) => i.materialId === input.materialId)) {
+      throw new Error('This material is already in the BOM');
     }
-  }
 
-  return materials;
+    const material = await db.orm.public.Material
+      .where((m) => m.id.eq(input.materialId))
+      .first();
+    if (!material) throw new Error('Material not found');
+
+    await db.orm.public.BomItem.create({
+      bomId: current.id,
+      materialId: input.materialId,
+      quantityPerUnit: input.quantity,
+      unit: input.unit,
+    });
+
+    return { version: current.version };
+  } else {
+    // Create first BOM version with this item
+    await bom.createBomVersion(productId, [{
+      materialId: input.materialId,
+      quantityPerUnit: input.quantity,
+      unit: input.unit,
+    }]);
+    const version = await bom.maxVersion(productId);
+    return { version };
+  }
+}
+
+/** Remove a BOM line from the current BOM version. */
+export async function removeBomItem(productId: string, materialId: string): Promise<void> {
+  const current = await bom.getCurrentBom(productId);
+  if (!current) throw new Error('No BOM for this product');
+
+  const allItems = await db.orm.public.BomItem
+    .select('id', 'materialId')
+    .where((i) => i.bomId.eq(current.id))
+    .all();
+  const target = allItems.find((i) => i.materialId === materialId);
+  if (!target) throw new Error('BOM item not found');
+
+  await db.orm.public.BomItem.where((i) => i.id.eq(target.id)).delete();
+}
+
+/** Get all materials available for BOM editing (used by the BOM editor dropdown). */
+export async function listMaterialsForBom(): Promise<Array<{ id: string; name: string; sku: string; unit: string }>> {
+  return db.orm.public.Material
+    .select('id', 'name', 'sku', 'unit')
+    .all()
+    .then((rows) => rows.map((r) => ({ id: r.id, name: r.name, sku: r.sku, unit: r.unit })));
 }

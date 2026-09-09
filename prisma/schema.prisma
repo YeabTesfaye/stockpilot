@@ -86,8 +86,10 @@ model Product {
   createdAt   TimestamptzString @default(now()) @map("created_at")
   updatedAt   temporal.updatedAtString() @map("updated_at")
 
-  // Reverse side of the BOM relationship.
-  bomItems    BomItem[]
+  // Current BOM (latest version). Set in application code by querying
+  // MAX(version) for this product. Not a DB-level FK to enforce "current".
+  currentBom  Bom?     @relation(fields: [currentBomId], references: [id])
+  currentBomId String? @map("current_bom_id")
 
   @@unique([tenantId, sku])
   @@map("products")
@@ -106,18 +108,34 @@ model Warehouse {
   @@map("warehouses")
 }
 
-// Bill of materials: which materials go into a product, and how many.
-// A product may have many BOM lines; each line points at one material.
-model BomItem {
+// Versioned bill of materials (Day 5).
+// Each product has a BOM — the latest version is the active one.
+// BOMItem rows belong to a specific BOM version, not directly to the product.
+
+model Bom {
   id          String   @id @default(uuid())
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId   String   @map("product_id")
-  material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  materialId  String   @map("material_id")
-  quantity    Float    @map("quantity")
-  unit        String   @map("unit")
+  version     Int      @map("version")
+  effectiveAt TimestamptzString @default(now()) @map("effective_at")
   createdAt   TimestamptzString @default(now()) @map("created_at")
 
-  @@unique([productId, materialId])
+  items       BomItem[]
+
+  @@unique([productId, version])
+  @@map("boms")
+}
+
+// Line items for a specific BOM version.
+model BomItem {
+  id                String   @id @default(uuid())
+  bom               Bom      @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  bomId             String   @map("bom_id")
+  material          Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  materialId        String   @map("material_id")
+  quantityPerUnit   Float    @map("quantity_per_unit")
+  unit              String   @map("unit")
+  createdAt         TimestamptzString @default(now()) @map("created_at")
+
   @@map("bom_items")
 }

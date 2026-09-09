@@ -46,8 +46,8 @@ export async function POST(
 
   return withTenant(tenantId, async () => {
     try {
-      await products.addBomItem(productId, { materialId, quantity, unit });
-      return new NextResponse(null, { status: 201 });
+      const result = await products.addBomItem(productId, { materialId, quantity, unit });
+      return NextResponse.json({ version: result.version }, { status: 201 });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       return NextResponse.json({ error: message }, { status: 404 });

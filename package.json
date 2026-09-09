@@ -5,13 +5,15 @@
   "scripts": {
     "dev": "next dev",
     "build": "npx prisma contract emit && dotenv -e .env -- npx prisma db migrate && next build",
+  "build:app": "npx prisma contract emit && next build",
+  "db:migrate": "dotenv -e .env -- npx prisma db migrate",
     "start": "next start",
     "lint": "eslint",
     "db:seed": "dotenv -e .env -- tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/cli-engine": "^0.3.0",
-    "@prisma/orm-postgres": "8.0.0-rc.8",
+    "@prisma/orm-postgres": "8.0.0-rc.8", 
     "@radix-ui/react-dialog": "^1.1.23",
     "@radix-ui/react-dropdown-menu": "^2.1.24",
     "@radix-ui/react-label": "^2.1.15",

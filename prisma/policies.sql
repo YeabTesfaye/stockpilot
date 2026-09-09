@@ -83,13 +83,28 @@ CREATE POLICY warehouses_tenant_isolation ON warehouses
   FOR ALL
   USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
 
--- bom_items: a row is visible only to members of its tenant (via its product).
-CREATE POLICY bom_items_tenant_isolation ON bom_items
+-- boms: a row is visible only to members of its product's tenant.
+CREATE POLICY boms_tenant_isolation ON boms
   FOR ALL
   USING (
     product_id IN (
       SELECT id FROM products
       WHERE tenant_id = current_setting('app.current_tenant_id', true)::text
+    )
+  );
+
+-- bom_items: a row is visible only to members of its BOM's product's tenant.
+-- Since bom_items.bom_id references boms.id, and boms.product_id references
+-- products.id, we follow the chain through boms.
+CREATE POLICY bom_items_tenant_isolation ON bom_items
+  FOR ALL
+  USING (
+    bom_id IN (
+      SELECT id FROM boms
+      WHERE product_id IN (
+        SELECT id FROM products
+        WHERE tenant_id = current_setting('app.current_tenant_id', true)::text
+      )
     )
   );
 

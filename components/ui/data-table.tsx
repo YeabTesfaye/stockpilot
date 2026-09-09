@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-interface Column<T> {
+export interface Column<T> {
   accessor: string;
   header: string;
   cell: (row: T) => React.ReactNode;
@@ -63,20 +63,26 @@ export function DataTable<T>({
                 </td>
               </tr>
             ) : (
-              data.map((row) => (
-                <tr key={String((row as Record<string, unknown>)[key])} className="hover:bg-muted/30">
-                  {columns.map((col) => (
-                    <td key={col.accessor} className={col.className ?? ''}>
-                      {col.cell(row)}
-                    </td>
-                  ))}
-                  {renderRowActions && (
-                    <td className="align-middle">
-                      {renderRowActions(row)}
-                    </td>
-                  )}
-                </tr>
-              ))
+              data.map((row, index) => {
+                const rowKey = String((row as Record<string, unknown>)[key]);
+                const stableKey = rowKey && rowKey !== 'undefined' && rowKey !== 'null'
+                  ? rowKey
+                  : `row-${index}`;
+                return (
+                  <tr key={stableKey} className="hover:bg-muted/30">
+                    {columns.map((col) => (
+                      <td key={col.accessor} className={col.className ?? ''}>
+                        {col.cell(row)}
+                      </td>
+                    ))}
+                    {renderRowActions && (
+                      <td className="align-middle">
+                        {renderRowActions(row)}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -90,7 +96,6 @@ interface RowActionsProps {
   onDelete: () => void;
   deleteLabel?: string;
 }
-
 export function RowActions({ onEdit, onDelete, deleteLabel = 'Delete' }: RowActionsProps) {
   return (
     <DropdownMenu>

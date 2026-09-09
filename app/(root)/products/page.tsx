@@ -173,7 +173,7 @@ export default function ProductsPage() {
       ),
     },
     {
-      accessor: 'bomItems',
+      accessor: 'bomChips',
       header: 'BOM',
       cell: (row) => {
         const items = row.bomItems;
@@ -194,7 +194,7 @@ export default function ProductsPage() {
       },
     },
     {
-      accessor: 'bomItems',
+      accessor: 'bomStatus',
       header: 'Status',
       cell: (row) => (
         <StatusBadge variant={bomComplete(row)}>

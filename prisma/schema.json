@@ -8,6 +8,10 @@
       "model": "BomItem",
       "namespace": "public"
     },
+    "boms": {
+      "model": "Bom",
+      "namespace": "public"
+    },
     "materials": {
       "model": "Material",
       "namespace": "public"
@@ -68,9 +72,16 @@
           }
         },
         "models": {
-          "BomItem": {
+          "Bom": {
             "fields": {
               "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "effectiveAt": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-string@1",
@@ -84,13 +95,6 @@
                   "kind": "scalar"
                 }
               },
-              "materialId": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
               "productId": {
                 "nullable": false,
                 "type": {
@@ -98,34 +102,27 @@
                   "kind": "scalar"
                 }
               },
-              "quantity": {
+              "version": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/float8@1",
-                  "kind": "scalar"
-                }
-              },
-              "unit": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
+                  "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               }
             },
             "relations": {
-              "material": {
-                "cardinality": "N:1",
+              "items": {
+                "cardinality": "1:N",
                 "on": {
                   "localFields": [
-                    "materialId"
+                    "id"
                   ],
                   "targetFields": [
-                    "id"
+                    "bomId"
                   ]
                 },
                 "to": {
-                  "model": "Material",
+                  "model": "BomItem",
                   "namespace": "public"
                 }
               },
@@ -150,17 +147,116 @@
                 "createdAt": {
                   "column": "created_at"
                 },
+                "effectiveAt": {
+                  "column": "effective_at"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "productId": {
+                  "column": "product_id"
+                },
+                "version": {
+                  "column": "version"
+                }
+              },
+              "namespaceId": "public",
+              "table": "boms"
+            }
+          },
+          "BomItem": {
+            "fields": {
+              "bomId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "materialId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "quantityPerUnit": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/float8@1",
+                  "kind": "scalar"
+                }
+              },
+              "unit": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "bom": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "bomId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Bom",
+                  "namespace": "public"
+                }
+              },
+              "material": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "materialId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Material",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "bomId": {
+                  "column": "bom_id"
+                },
+                "createdAt": {
+                  "column": "created_at"
+                },
                 "id": {
                   "column": "id"
                 },
                 "materialId": {
                   "column": "material_id"
                 },
-                "productId": {
-                  "column": "product_id"
-                },
-                "quantity": {
-                  "column": "quantity"
+                "quantityPerUnit": {
+                  "column": "quantity_per_unit"
                 },
                 "unit": {
                   "column": "unit"
@@ -394,6 +490,13 @@
                   "kind": "scalar"
                 }
               },
+              "currentBomId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "description": {
                 "nullable": true,
                 "type": {
@@ -438,18 +541,18 @@
               }
             },
             "relations": {
-              "bomItems": {
-                "cardinality": "1:N",
+              "currentBom": {
+                "cardinality": "N:1",
                 "on": {
                   "localFields": [
-                    "id"
+                    "currentBomId"
                   ],
                   "targetFields": [
-                    "productId"
+                    "id"
                   ]
                 },
                 "to": {
-                  "model": "BomItem",
+                  "model": "Bom",
                   "namespace": "public"
                 }
               },
@@ -473,6 +576,9 @@
               "fields": {
                 "createdAt": {
                   "column": "created_at"
+                },
+                "currentBomId": {
+                  "column": "current_bom_id"
                 },
                 "description": {
                   "column": "description"
@@ -851,6 +957,11 @@
           "table": {
             "bom_items": {
               "columns": {
+                "bom_id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
                 "created_at": {
                   "codecId": "pg/timestamptz-string@1",
                   "default": {
@@ -870,12 +981,7 @@
                   "nativeType": "text",
                   "nullable": false
                 },
-                "product_id": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
-                  "nullable": false
-                },
-                "quantity": {
+                "quantity_per_unit": {
                   "codecId": "pg/float8@1",
                   "nativeType": "float8",
                   "nullable": false
@@ -891,7 +997,7 @@
                   "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "product_id"
+                      "bom_id"
                     ],
                     "namespaceId": "public",
                     "tableName": "bom_items"
@@ -901,7 +1007,7 @@
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "products"
+                    "tableName": "boms"
                   }
                 },
                 {
@@ -925,18 +1031,90 @@
               "indexes": [
                 {
                   "columns": [
+                    "bom_id"
+                  ],
+                  "name": "bom_items_bom_id_idx_96a0a405",
+                  "prefix": "bom_items_bom_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "material_id"
                   ],
                   "name": "bom_items_material_id_idx_1234cc3b",
                   "prefix": "bom_items_material_id_idx",
                   "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "boms": {
+              "columns": {
+                "created_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
                 },
+                "effective_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "product_id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "version": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "product_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "boms"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "products"
+                  }
+                }
+              ],
+              "indexes": [
                 {
                   "columns": [
                     "product_id"
                   ],
-                  "name": "bom_items_product_id_idx_22a2b7d2",
-                  "prefix": "bom_items_product_id_idx",
+                  "name": "boms_product_id_idx_22a2b7d2",
+                  "prefix": "boms_product_id_idx",
                   "unique": false
                 }
               ],
@@ -949,7 +1127,7 @@
                 {
                   "columns": [
                     "product_id",
-                    "material_id"
+                    "version"
                   ]
                 }
               ]
@@ -1177,6 +1355,11 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
+                "current_bom_id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "description": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -1225,9 +1408,33 @@
                     "namespaceId": "public",
                     "tableName": "tenants"
                   }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "current_bom_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "products"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "boms"
+                  }
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "current_bom_id"
+                  ],
+                  "name": "products_current_bom_id_idx_15995837",
+                  "prefix": "products_current_bom_id_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "tenant_id"
@@ -1509,10 +1716,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "9b8e68a8c8cac6afe80e2f55712bda37c59c14d57e95807ae5ff598a4e5f9bbd"
+    "storageHash": "566dc65dd578b24f21a25662e2b47eaae43aa8f452ed99dec6ed1cced39684eb"
   },
   "execution": {
-    "executionHash": "9d235268a3227b808558d1ef675b9cd5dee2368c6f6da0fcf26b47102dabe920",
+    "executionHash": "a49446b9119a7ce6f87bcfd2df5662fcf6e70fd1ca3f500ac0d043eccf1f0d17",
     "mutations": {
       "defaults": [
         {
@@ -1524,6 +1731,17 @@
             "column": "id",
             "namespace": "public",
             "table": "bom_items"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "boms"
           }
         },
         {

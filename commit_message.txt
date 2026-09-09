@@ -1,0 +1,21 @@
+Day 6 — "Can we manufacture N units?" (max buildable)
+
+- server/model/max-buildable.ts — deterministic MRP calc: for a product's
+  current BOM, compute MIN(floor(available_stock / qty_per_unit)) across every
+  material line; returns per-material breakdown + binding constraint flag
+- app/api/products/[id]/max-buildable/route.ts — GET endpoint, RLS-scoped via
+  withTenant, gated by VIEW_PRODUCTS; returns productId, productName,
+  maxBuildable, and per-material rows
+- app/(root)/products/[id]/max-buildable/page.tsx — large StatTile for the
+  buildable count + DataTable of per-material contribution; binding-constraint
+  row flagged with amber accent and a "Binding constraint" StatusBadge
+- app/(root)/products/[id]/page.tsx — "Max buildable" button next to "Edit BOM"
+  so the count is one click from the product detail view
+- seed: raise CHAIR-001 material minStock so the demo computes to exactly 420,
+  limited by Backrests (BACK-001); per-material buildable reads
+  Seat=2000, Backrest=420, Wheels=1000, Gas Cylinder=4500, Screws=2500,
+  Armrest Pair=500
+- scripts/smoke-max-buildable.mjs — 13-check smoke test asserting the
+  420 figure and the Backrest binding constraint
+- docs/decisions.md — Day 6 decision note with expected seed state and
+  verification steps
