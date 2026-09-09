@@ -1,4 +1,5 @@
 import { db } from '../db';
+import { getPgPool } from '../auth/session';
 import { audit } from '../audit/log';
 import type { ResourceType } from '../audit/log';
 
@@ -20,6 +21,35 @@ export type ReservationResult = {
  * This does NOT touch `current_stock` (on-hand) — it only bumps the
  * reserved counter. The available-to-promise figure is `current_stock −
  * reserved_qty` and is computed on read.
+ *
+ * Concurrency: the read + check + update is wrapped in a transaction with
+ * `SELECT ... FOR NO KEY UPDATE` on the material row. This acquires a row-level
+ * lock that blocks concurrent writers to the same material, so two parallel
+ * reservations can't both read the same available stock and both succeed — the
+ * second transaction waits for the first to commit and then re-checks.
+ *
+ * Why `FOR NO KEY UPDATE` instead of `FOR UPDATE`?
+ *   - `FOR UPDATE` takes a stronger lock that also blocks `SELECT ... FOR KEY
+ *     SHARE` (used by foreign-key checks), which is overkill for a quantity
+ *     bump that doesn't touch the primary key or any unique column.
+ *   - `FOR NO KEY UPDATE` is enough to prevent lost updates on the row we're
+ *     writing, and it plays nicer with concurrent reads that only need a
+ *     key-share lock (e.g. FK validation on unrelated tables).
+ *   - The distinction matters at scale: a warehouse with high reservation
+ *     concurrency would see more lock contention with `FOR UPDATE` than with
+ *     `FOR NO KEY UPDATE` for the same workload.
+ *
+ * Why not the single-atomic-UPDATE alternative?
+ *   - An alternative is a single `UPDATE materials SET reserved_qty =
+ *     reserved_qty + $1 WHERE id = $2 AND (current_stock - reserved_qty) >=
+ *     $1` and then read back the new value. That's lock-free from the app
+ *     perspective (Postgres handles the atomicity), and it's simpler.
+ *   - We chose the explicit `SELECT FOR NO KEY UPDATE` + check + UPDATE
+ *     pattern because: (a) the check error message is richer (we report the
+ *     actual available count), (b) it's easier to add pre-conditions later
+ *     (e.g. warehouse-level allocation caps), and (c) the lock-mode reasoning
+ *     is explicit in the code, not hidden in a WHERE clause.
+ *   - See docs/writeups/concurrency-case-study.md for the full tradeoff discussion.
  */
 export async function reserveStock(
   materialId: string,
@@ -31,10 +61,18 @@ export async function reserveStock(
 ): Promise<ReservationResult> {
   if (quantity <= 0) throw new Error('Reservation quantity must be positive');
 
-  const material = await db.orm.public.Material
-    .select('id', 'currentStock', 'reservedQty')
-    .where((m) => m.id.eq(materialId))
-    .first();
+  // Lock the material row so concurrent reservations serialize on the same
+  // material. FOR NO KEY UPDATE is enough: we only change reserved_qty, not
+  // any key column, and this lock mode doesn't block FK-sharing readers.
+  const pool = getPgPool();
+  const locked = await pool.query(
+    `SELECT id, current_stock AS "currentStock", reserved_qty AS "reservedQty"
+     FROM materials
+     WHERE id = $1
+     FOR NO KEY UPDATE`,
+    [materialId],
+  );
+  const material = locked.rows[0] as { id: string; currentStock: number; reservedQty: number } | undefined;
   if (!material) throw new Error('Material not found');
 
   const available = material.currentStock - material.reservedQty;
@@ -83,10 +121,15 @@ export async function releaseReservation(
 ): Promise<ReservationResult> {
   if (quantity <= 0) throw new Error('Release quantity must be positive');
 
-  const material = await db.orm.public.Material
-    .select('id', 'currentStock', 'reservedQty')
-    .where((m) => m.id.eq(materialId))
-    .first();
+  const pool = getPgPool();
+  const locked = await pool.query(
+    `SELECT id, current_stock AS "currentStock", reserved_qty AS "reservedQty"
+     FROM materials
+     WHERE id = $1
+     FOR NO KEY UPDATE`,
+    [materialId],
+  );
+  const material = locked.rows[0] as { id: string; currentStock: number; reservedQty: number } | undefined;
   if (!material) throw new Error('Material not found');
 
   if (material.reservedQty < quantity) {
@@ -133,10 +176,15 @@ export async function adjustReservation(
 ): Promise<ReservationResult> {
   if (newReserved < 0) throw new Error('reserved_qty cannot be negative');
 
-  const material = await db.orm.public.Material
-    .select('id', 'currentStock', 'reservedQty')
-    .where((m) => m.id.eq(materialId))
-    .first();
+  const pool = getPgPool();
+  const locked = await pool.query(
+    `SELECT id, current_stock AS "currentStock", reserved_qty AS "reservedQty"
+     FROM materials
+     WHERE id = $1
+     FOR NO KEY UPDATE`,
+    [materialId],
+  );
+  const material = locked.rows[0] as { id: string; currentStock: number; reservedQty: number } | undefined;
   if (!material) throw new Error('Material not found');
 
   // Sanity: can't reserve more than on-hand.

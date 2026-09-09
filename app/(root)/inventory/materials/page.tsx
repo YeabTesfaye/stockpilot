@@ -149,7 +149,7 @@ export default function MaterialsPage() {
           keyField="id"
           renderRowActions={(row) => (
             <RowActions
-              onEdit={() => router.push(`/dashboard/inventory/materials/${row.id}`)}
+              onEdit={() => router.push(`/inventory/materials/${row.id}`)}
               onDelete={() => handleDelete(row.id)}
             />
           )}

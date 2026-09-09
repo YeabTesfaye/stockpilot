@@ -14,7 +14,7 @@ const sha256 = (value: string) =>
 // Shares the same connection params as the Prisma db so connection
 // pooling is balanced.
 let pgPool: Pool | null = null;
-function getPgPool(): Pool {
+export function getPgPool(): Pool {
   if (!pgPool) {
     const url = process.env['DATABASE_URL'];
     if (!url) throw new Error('DATABASE_URL not set');

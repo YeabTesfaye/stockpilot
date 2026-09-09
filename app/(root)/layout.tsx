@@ -6,7 +6,7 @@ import { getSessionUser } from '@/server/auth/session';
 import { SESSION_COOKIE } from '@/server/auth/cookie';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { UserMenu } from '@/components/user-menu';
-import { History, Package, Building } from 'lucide-react';
+import { History, Package, Building, Boxes } from 'lucide-react';
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const store = await cookies();
@@ -16,35 +16,53 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   const { user, memberships } = session;
 
-  const navItems = [
-    { href: '/audit-log', label: 'Audit log', icon: History },
-    { href: '/inventory/materials', label: 'Materials', icon: Package },
-    { href: '/products', label: 'Products', icon: Package },
-    { href: '/warehouses', label: 'Warehouses', icon: Building },
-  ];
-
   return (
     <div className="flex min-h-full flex-1">
       {/* ── Sidebar ─────────────────────────────────── */}
       <aside className="w-56 border-r bg-card hidden md:flex flex-col">
-        <div className="flex items-center gap-2 border-b px-4 py-3">
+        {/* <div className="flex items-center gap-2 border-b px-4 py-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500">
             <Package className="h-4 w-4 text-white" />
           </div>
           <span className="text-lg font-semibold tracking-tight">StockPilot</span>
-        </div>
+        </div> */}
+
+        <Link href="/dashboard" className="flex items-center gap-2 border-b px-4 py-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500">
+            <Boxes className="h-4 w-4 text-white" />
+          </div>
+          <span className="text-lg font-semibold tracking-tight">StockPilot</span>
+        </Link>
 
         <nav className="flex-1 p-3 space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              <item.icon className="size-4" />
-              {item.label}
-            </Link>
-          ))}
+          <Link
+            href="/inventory/materials"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <Package className="size-4" />
+            Materials
+          </Link>
+          <Link
+            href="/products"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <Package className="size-4" />
+            Products
+          </Link>
+          <Link
+            href="/warehouses"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <Building className="size-4" />
+            Warehouses
+          </Link>
+          <Link
+            href="/inventory/adjustments"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <History className="size-4" />
+            Adjustments
+          </Link>
         </nav>
 
         <div className="border-t p-3">

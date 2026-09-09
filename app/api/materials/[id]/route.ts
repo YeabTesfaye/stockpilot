@@ -67,6 +67,8 @@ export async function PUT(
         description: typeof body.description === 'string' ? body.description : body.description === null ? null : undefined,
         unit: typeof body.unit === 'string' ? body.unit : undefined,
         minStock: typeof body.minStock === 'number' ? body.minStock : undefined,
+        currentStock: typeof body.currentStock === 'number' ? body.currentStock : undefined,
+        reservedQty: typeof body.reservedQty === 'number' ? body.reservedQty : undefined,
       });
       return NextResponse.json(item);
     } catch (err) {

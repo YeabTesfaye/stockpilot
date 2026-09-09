@@ -24,6 +24,7 @@ export type MovementInput = {
   actorName: string;
   tenantId: string;
   description?: string;
+  idempotencyKey?: string;
 };
 
 /**
@@ -39,13 +40,21 @@ export type MovementInput = {
  *   all movements for that material (kept in sync here, never written directly).
  * - An audit entry is written for every movement so the trail is traceable.
  *
+ * Idempotency (Day 13):
+ *   - If `input.idempotencyKey` is provided, we check whether a movement with
+ *     that key already exists. If it does, we return the existing movement's
+ *     id and newStock WITHOUT creating a duplicate. This makes retries safe:
+ *     the same key submitted twice produces exactly one movement.
+ *   - The idempotency key is stored on the movement row so the guard is
+ *     durable (survives process restarts) and visible in the ledger.
+ *
  * Throws if:
  *   - the material or warehouse (if given) does not exist
  *   - the movement would make current_stock negative (optional safeguard —
  *     remove the check if you want to allow negative stock)
  */
 export async function recordMovement(input: MovementInput): Promise<{ id: string; newStock: number }> {
-  const { materialId, warehouseId, type, quantity, reference, referenceId, actorUserId, actorName, tenantId, description } = input;
+  const { materialId, warehouseId, type, quantity, reference, referenceId, actorUserId, actorName, tenantId, description, idempotencyKey } = input;
 
   if (quantity === 0) {
     throw new Error('Movement quantity must be non-zero');
@@ -63,7 +72,22 @@ export async function recordMovement(input: MovementInput): Promise<{ id: string
     throw new Error(`Insufficient stock: material has ${material.currentStock}, attempted to remove ${Math.abs(quantity)}`);
   }
 
+  // Idempotency guard (Day 13): if a key is provided and a matching movement
+  // already exists, return it verbatim — never double-count. Check AFTER
+  // we've loaded the material so the returned newStock is accurate.
+  if (idempotencyKey) {
+    const existing = await db.orm.public.StockMovement
+      .select('id', 'quantity')
+      .where((m) => m.referenceId.eq(idempotencyKey))
+      .first();
+    if (existing) {
+      return { id: existing.id, newStock: material.currentStock + existing.quantity };
+    }
+  }
+
   // Record the movement row (immutable ledger entry).
+  // If an idempotency key is provided, store it as the reference_id so the
+  // guard above can find this row on a retry.
   const movement = await db.orm.public.StockMovement.create({
     tenantId,
     materialId,
@@ -71,7 +95,7 @@ export async function recordMovement(input: MovementInput): Promise<{ id: string
     type,
     quantity,
     reference: reference ?? null,
-    referenceId: referenceId ?? null,
+    referenceId: idempotencyKey ?? referenceId ?? null,
   });
 
   // Update the material's on-hand mirror.
