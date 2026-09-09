@@ -1,0 +1,1769 @@
+[
+  {
+    "id": "table.audit_logs",
+    "label": "Create table \"audit_logs\"",
+    "summary": "Creates table \"audit_logs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "audit_logs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"audit_logs\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"audit_logs\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"audit_logs\"",
+        "sql": "CREATE TABLE \"public\".\"audit_logs\" (\n  \"action\" text NOT NULL,\n  \"actor_name\" text NOT NULL,\n  \"actor_user_id\" text NOT NULL,\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"id\" text NOT NULL,\n  \"resource_id\" text NOT NULL,\n  \"resource_type\" text NOT NULL,\n  \"snapshot\" text,\n  \"tenant_id\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"audit_logs_action_check_60f3d6d6\" CHECK (\"action\" IN ('CREATE', 'UPDATE', 'DELETE', 'RESTORE', 'LOGIN', 'LOGOUT', 'PASSWORD_CHANGE'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"audit_logs\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"audit_logs\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.bom_items",
+    "label": "Create table \"bom_items\"",
+    "summary": "Creates table \"bom_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"bom_items\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"bom_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"bom_items\"",
+        "sql": "CREATE TABLE \"public\".\"bom_items\" (\n  \"bom_id\" text NOT NULL,\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"material_id\" text NOT NULL,\n  \"quantity_per_unit\" float8 NOT NULL,\n  \"unit\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"bom_items\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"bom_items\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.boms",
+    "label": "Create table \"boms\"",
+    "summary": "Creates table \"boms\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "boms"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"boms\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"boms\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"boms\"",
+        "sql": "CREATE TABLE \"public\".\"boms\" (\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"effective_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"product_id\" text NOT NULL,\n  \"version\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"boms\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"boms\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.materials",
+    "label": "Create table \"materials\"",
+    "summary": "Creates table \"materials\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "materials"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"materials\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"materials\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"materials\"",
+        "sql": "CREATE TABLE \"public\".\"materials\" (\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"current_stock\" int4 DEFAULT 0 NOT NULL,\n  \"description\" text,\n  \"id\" text NOT NULL,\n  \"min_stock\" int4 DEFAULT 0 NOT NULL,\n  \"name\" text NOT NULL,\n  \"reserved_qty\" int4 DEFAULT 0 NOT NULL,\n  \"sku\" text NOT NULL,\n  \"tenant_id\" text NOT NULL,\n  \"unit\" text NOT NULL,\n  \"updated_at\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"materials\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"materials\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.products",
+    "label": "Create table \"products\"",
+    "summary": "Creates table \"products\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "products"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"products\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"products\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"products\"",
+        "sql": "CREATE TABLE \"public\".\"products\" (\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"current_bom_id\" text,\n  \"description\" text,\n  \"id\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"sku\" text NOT NULL,\n  \"tenant_id\" text NOT NULL,\n  \"updated_at\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"products\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"products\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.sales_order_items",
+    "label": "Create table \"sales_order_items\"",
+    "summary": "Creates table \"sales_order_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "sales_order_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"sales_order_items\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"sales_order_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"sales_order_items\"",
+        "sql": "CREATE TABLE \"public\".\"sales_order_items\" (\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"product_id\" text NOT NULL,\n  \"quantity\" int4 NOT NULL,\n  \"sales_order_id\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"sales_order_items\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"sales_order_items\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.sales_orders",
+    "label": "Create table \"sales_orders\"",
+    "summary": "Creates table \"sales_orders\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "sales_orders"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"sales_orders\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"sales_orders\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"sales_orders\"",
+        "sql": "CREATE TABLE \"public\".\"sales_orders\" (\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"customer\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"status\" text DEFAULT 'DRAFT' NOT NULL,\n  \"tenant_id\" text NOT NULL,\n  \"updated_at\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"sales_orders\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"sales_orders\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.stock_movements",
+    "label": "Create table \"stock_movements\"",
+    "summary": "Creates table \"stock_movements\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "stock_movements"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"stock_movements\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stock_movements\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"stock_movements\"",
+        "sql": "CREATE TABLE \"public\".\"stock_movements\" (\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"material_id\" text NOT NULL,\n  \"quantity\" int4 NOT NULL,\n  \"reference\" text,\n  \"reference_id\" text,\n  \"tenant_id\" text NOT NULL,\n  \"type\" text NOT NULL,\n  \"warehouse_id\" text,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"stock_movements_type_check_0d816ad8\" CHECK (\"type\" IN ('PURCHASE', 'SALE', 'RETURN', 'DAMAGE', 'TRANSFER', 'ADJUSTMENT', 'RESERVATION', 'RESERVATION_RELEASE'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"stock_movements\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stock_movements\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.warehouses",
+    "label": "Create table \"warehouses\"",
+    "summary": "Creates table \"warehouses\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "warehouses"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"warehouses\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"warehouses\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"warehouses\"",
+        "sql": "CREATE TABLE \"public\".\"warehouses\" (\n  \"address\" text,\n  \"code\" text,\n  \"created_at\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"tenant_id\" text NOT NULL,\n  \"updated_at\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"warehouses\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"warehouses\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.boms.boms_product_id_version_key",
+    "label": "Add unique constraint on \"boms\" (product_id, version)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "boms_product_id_version_key",
+        "table": "boms"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"boms_product_id_version_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "boms_product_id_version_key",
+          "public",
+          "\"public\".\"boms\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"boms_product_id_version_key\"",
+        "sql": "ALTER TABLE \"public\".\"boms\" ADD CONSTRAINT \"boms_product_id_version_key\" UNIQUE (\"product_id\", \"version\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"boms_product_id_version_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "boms_product_id_version_key",
+          "public",
+          "\"public\".\"boms\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.materials.materials_tenant_id_sku_key",
+    "label": "Add unique constraint on \"materials\" (tenant_id, sku)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "materials_tenant_id_sku_key",
+        "table": "materials"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"materials_tenant_id_sku_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "materials_tenant_id_sku_key",
+          "public",
+          "\"public\".\"materials\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"materials_tenant_id_sku_key\"",
+        "sql": "ALTER TABLE \"public\".\"materials\" ADD CONSTRAINT \"materials_tenant_id_sku_key\" UNIQUE (\"tenant_id\", \"sku\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"materials_tenant_id_sku_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "materials_tenant_id_sku_key",
+          "public",
+          "\"public\".\"materials\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.products.products_tenant_id_sku_key",
+    "label": "Add unique constraint on \"products\" (tenant_id, sku)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "products_tenant_id_sku_key",
+        "table": "products"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"products_tenant_id_sku_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "products_tenant_id_sku_key",
+          "public",
+          "\"public\".\"products\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"products_tenant_id_sku_key\"",
+        "sql": "ALTER TABLE \"public\".\"products\" ADD CONSTRAINT \"products_tenant_id_sku_key\" UNIQUE (\"tenant_id\", \"sku\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"products_tenant_id_sku_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "products_tenant_id_sku_key",
+          "public",
+          "\"public\".\"products\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.audit_logs.audit_logs_tenant_id_created_at_idx_282da036",
+    "label": "Create index \"audit_logs_tenant_id_created_at_idx_282da036\" on \"audit_logs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "audit_logs_tenant_id_created_at_idx_282da036",
+        "table": "audit_logs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"audit_logs_tenant_id_created_at_idx_282da036\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"audit_logs_tenant_id_created_at_idx_282da036\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"audit_logs_tenant_id_created_at_idx_282da036\"",
+        "sql": "CREATE INDEX \"audit_logs_tenant_id_created_at_idx_282da036\" ON \"public\".\"audit_logs\" (\"tenant_id\", \"created_at\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"audit_logs_tenant_id_created_at_idx_282da036\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"audit_logs_tenant_id_created_at_idx_282da036\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.audit_logs.audit_logs_tenant_id_idx_41c0d441",
+    "label": "Create index \"audit_logs_tenant_id_idx_41c0d441\" on \"audit_logs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "audit_logs_tenant_id_idx_41c0d441",
+        "table": "audit_logs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"audit_logs_tenant_id_idx_41c0d441\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"audit_logs_tenant_id_idx_41c0d441\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"audit_logs_tenant_id_idx_41c0d441\"",
+        "sql": "CREATE INDEX \"audit_logs_tenant_id_idx_41c0d441\" ON \"public\".\"audit_logs\" (\"tenant_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"audit_logs_tenant_id_idx_41c0d441\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"audit_logs_tenant_id_idx_41c0d441\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.audit_logs.audit_logs_tenant_id_resource_type_resource_id_idx_37751343",
+    "label": "Create index \"audit_logs_tenant_id_resource_type_resource_id_idx_37751343\" on \"audit_logs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "audit_logs_tenant_id_resource_type_resource_id_idx_37751343",
+        "table": "audit_logs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"audit_logs_tenant_id_resource_type_resource_id_idx_37751343\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"audit_logs_tenant_id_resource_type_resource_id_idx_37751343\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"audit_logs_tenant_id_resource_type_resource_id_idx_37751343\"",
+        "sql": "CREATE INDEX \"audit_logs_tenant_id_resource_type_resource_id_idx_37751343\" ON \"public\".\"audit_logs\" (\"tenant_id\", \"resource_type\", \"resource_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"audit_logs_tenant_id_resource_type_resource_id_idx_37751343\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"audit_logs_tenant_id_resource_type_resource_id_idx_37751343\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bom_items.bom_items_bom_id_idx_96a0a405",
+    "label": "Create index \"bom_items_bom_id_idx_96a0a405\" on \"bom_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "bom_items_bom_id_idx_96a0a405",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bom_items_bom_id_idx_96a0a405\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"bom_items_bom_id_idx_96a0a405\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bom_items_bom_id_idx_96a0a405\"",
+        "sql": "CREATE INDEX \"bom_items_bom_id_idx_96a0a405\" ON \"public\".\"bom_items\" (\"bom_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bom_items_bom_id_idx_96a0a405\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"bom_items_bom_id_idx_96a0a405\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.bom_items.bom_items_material_id_idx_1234cc3b",
+    "label": "Create index \"bom_items_material_id_idx_1234cc3b\" on \"bom_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "bom_items_material_id_idx_1234cc3b",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"bom_items_material_id_idx_1234cc3b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"bom_items_material_id_idx_1234cc3b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"bom_items_material_id_idx_1234cc3b\"",
+        "sql": "CREATE INDEX \"bom_items_material_id_idx_1234cc3b\" ON \"public\".\"bom_items\" (\"material_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"bom_items_material_id_idx_1234cc3b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"bom_items_material_id_idx_1234cc3b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.boms.boms_product_id_idx_22a2b7d2",
+    "label": "Create index \"boms_product_id_idx_22a2b7d2\" on \"boms\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "boms_product_id_idx_22a2b7d2",
+        "table": "boms"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"boms_product_id_idx_22a2b7d2\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"boms_product_id_idx_22a2b7d2\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"boms_product_id_idx_22a2b7d2\"",
+        "sql": "CREATE INDEX \"boms_product_id_idx_22a2b7d2\" ON \"public\".\"boms\" (\"product_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"boms_product_id_idx_22a2b7d2\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"boms_product_id_idx_22a2b7d2\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.materials.materials_tenant_id_idx_41c0d441",
+    "label": "Create index \"materials_tenant_id_idx_41c0d441\" on \"materials\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "materials_tenant_id_idx_41c0d441",
+        "table": "materials"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"materials_tenant_id_idx_41c0d441\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"materials_tenant_id_idx_41c0d441\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"materials_tenant_id_idx_41c0d441\"",
+        "sql": "CREATE INDEX \"materials_tenant_id_idx_41c0d441\" ON \"public\".\"materials\" (\"tenant_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"materials_tenant_id_idx_41c0d441\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"materials_tenant_id_idx_41c0d441\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.products.products_current_bom_id_idx_15995837",
+    "label": "Create index \"products_current_bom_id_idx_15995837\" on \"products\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "products_current_bom_id_idx_15995837",
+        "table": "products"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"products_current_bom_id_idx_15995837\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"products_current_bom_id_idx_15995837\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"products_current_bom_id_idx_15995837\"",
+        "sql": "CREATE INDEX \"products_current_bom_id_idx_15995837\" ON \"public\".\"products\" (\"current_bom_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"products_current_bom_id_idx_15995837\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"products_current_bom_id_idx_15995837\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.products.products_tenant_id_idx_41c0d441",
+    "label": "Create index \"products_tenant_id_idx_41c0d441\" on \"products\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "products_tenant_id_idx_41c0d441",
+        "table": "products"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"products_tenant_id_idx_41c0d441\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"products_tenant_id_idx_41c0d441\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"products_tenant_id_idx_41c0d441\"",
+        "sql": "CREATE INDEX \"products_tenant_id_idx_41c0d441\" ON \"public\".\"products\" (\"tenant_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"products_tenant_id_idx_41c0d441\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"products_tenant_id_idx_41c0d441\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.sales_order_items.sales_order_items_product_id_idx_22a2b7d2",
+    "label": "Create index \"sales_order_items_product_id_idx_22a2b7d2\" on \"sales_order_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "sales_order_items_product_id_idx_22a2b7d2",
+        "table": "sales_order_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"sales_order_items_product_id_idx_22a2b7d2\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"sales_order_items_product_id_idx_22a2b7d2\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"sales_order_items_product_id_idx_22a2b7d2\"",
+        "sql": "CREATE INDEX \"sales_order_items_product_id_idx_22a2b7d2\" ON \"public\".\"sales_order_items\" (\"product_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"sales_order_items_product_id_idx_22a2b7d2\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"sales_order_items_product_id_idx_22a2b7d2\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.sales_order_items.sales_order_items_sales_order_id_idx_e972f467",
+    "label": "Create index \"sales_order_items_sales_order_id_idx_e972f467\" on \"sales_order_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "sales_order_items_sales_order_id_idx_e972f467",
+        "table": "sales_order_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"sales_order_items_sales_order_id_idx_e972f467\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"sales_order_items_sales_order_id_idx_e972f467\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"sales_order_items_sales_order_id_idx_e972f467\"",
+        "sql": "CREATE INDEX \"sales_order_items_sales_order_id_idx_e972f467\" ON \"public\".\"sales_order_items\" (\"sales_order_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"sales_order_items_sales_order_id_idx_e972f467\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"sales_order_items_sales_order_id_idx_e972f467\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.sales_orders.sales_orders_tenant_id_idx_41c0d441",
+    "label": "Create index \"sales_orders_tenant_id_idx_41c0d441\" on \"sales_orders\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "sales_orders_tenant_id_idx_41c0d441",
+        "table": "sales_orders"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"sales_orders_tenant_id_idx_41c0d441\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"sales_orders_tenant_id_idx_41c0d441\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"sales_orders_tenant_id_idx_41c0d441\"",
+        "sql": "CREATE INDEX \"sales_orders_tenant_id_idx_41c0d441\" ON \"public\".\"sales_orders\" (\"tenant_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"sales_orders_tenant_id_idx_41c0d441\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"sales_orders_tenant_id_idx_41c0d441\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.stock_movements.stock_movements_material_id_idx_1234cc3b",
+    "label": "Create index \"stock_movements_material_id_idx_1234cc3b\" on \"stock_movements\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "stock_movements_material_id_idx_1234cc3b",
+        "table": "stock_movements"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"stock_movements_material_id_idx_1234cc3b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stock_movements_material_id_idx_1234cc3b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"stock_movements_material_id_idx_1234cc3b\"",
+        "sql": "CREATE INDEX \"stock_movements_material_id_idx_1234cc3b\" ON \"public\".\"stock_movements\" (\"material_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"stock_movements_material_id_idx_1234cc3b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stock_movements_material_id_idx_1234cc3b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.stock_movements.stock_movements_tenant_id_idx_41c0d441",
+    "label": "Create index \"stock_movements_tenant_id_idx_41c0d441\" on \"stock_movements\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "stock_movements_tenant_id_idx_41c0d441",
+        "table": "stock_movements"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"stock_movements_tenant_id_idx_41c0d441\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stock_movements_tenant_id_idx_41c0d441\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"stock_movements_tenant_id_idx_41c0d441\"",
+        "sql": "CREATE INDEX \"stock_movements_tenant_id_idx_41c0d441\" ON \"public\".\"stock_movements\" (\"tenant_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"stock_movements_tenant_id_idx_41c0d441\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stock_movements_tenant_id_idx_41c0d441\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.stock_movements.stock_movements_tenant_id_material_id_idx_08a22ca1",
+    "label": "Create index \"stock_movements_tenant_id_material_id_idx_08a22ca1\" on \"stock_movements\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "stock_movements_tenant_id_material_id_idx_08a22ca1",
+        "table": "stock_movements"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"stock_movements_tenant_id_material_id_idx_08a22ca1\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stock_movements_tenant_id_material_id_idx_08a22ca1\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"stock_movements_tenant_id_material_id_idx_08a22ca1\"",
+        "sql": "CREATE INDEX \"stock_movements_tenant_id_material_id_idx_08a22ca1\" ON \"public\".\"stock_movements\" (\"tenant_id\", \"material_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"stock_movements_tenant_id_material_id_idx_08a22ca1\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stock_movements_tenant_id_material_id_idx_08a22ca1\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.stock_movements.stock_movements_tenant_id_warehouse_id_idx_2672ff56",
+    "label": "Create index \"stock_movements_tenant_id_warehouse_id_idx_2672ff56\" on \"stock_movements\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "stock_movements_tenant_id_warehouse_id_idx_2672ff56",
+        "table": "stock_movements"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"stock_movements_tenant_id_warehouse_id_idx_2672ff56\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stock_movements_tenant_id_warehouse_id_idx_2672ff56\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"stock_movements_tenant_id_warehouse_id_idx_2672ff56\"",
+        "sql": "CREATE INDEX \"stock_movements_tenant_id_warehouse_id_idx_2672ff56\" ON \"public\".\"stock_movements\" (\"tenant_id\", \"warehouse_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"stock_movements_tenant_id_warehouse_id_idx_2672ff56\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stock_movements_tenant_id_warehouse_id_idx_2672ff56\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.stock_movements.stock_movements_warehouse_id_idx_ead2e837",
+    "label": "Create index \"stock_movements_warehouse_id_idx_ead2e837\" on \"stock_movements\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "stock_movements_warehouse_id_idx_ead2e837",
+        "table": "stock_movements"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"stock_movements_warehouse_id_idx_ead2e837\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stock_movements_warehouse_id_idx_ead2e837\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"stock_movements_warehouse_id_idx_ead2e837\"",
+        "sql": "CREATE INDEX \"stock_movements_warehouse_id_idx_ead2e837\" ON \"public\".\"stock_movements\" (\"warehouse_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"stock_movements_warehouse_id_idx_ead2e837\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"stock_movements_warehouse_id_idx_ead2e837\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.warehouses.warehouses_tenant_id_idx_41c0d441",
+    "label": "Create index \"warehouses_tenant_id_idx_41c0d441\" on \"warehouses\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "warehouses_tenant_id_idx_41c0d441",
+        "table": "warehouses"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"warehouses_tenant_id_idx_41c0d441\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"warehouses_tenant_id_idx_41c0d441\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"warehouses_tenant_id_idx_41c0d441\"",
+        "sql": "CREATE INDEX \"warehouses_tenant_id_idx_41c0d441\" ON \"public\".\"warehouses\" (\"tenant_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"warehouses_tenant_id_idx_41c0d441\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"warehouses_tenant_id_idx_41c0d441\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.audit_logs.audit_logs_tenant_id_fkey",
+    "label": "Add foreign key \"audit_logs_tenant_id_fkey\" on \"audit_logs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "audit_logs_tenant_id_fkey",
+        "table": "audit_logs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"audit_logs_tenant_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "audit_logs_tenant_id_fkey",
+          "public",
+          "\"public\".\"audit_logs\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"audit_logs_tenant_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"audit_logs\"\nADD CONSTRAINT \"audit_logs_tenant_id_fkey\"\nFOREIGN KEY (\"tenant_id\")\nREFERENCES \"public\".\"tenants\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"audit_logs_tenant_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "audit_logs_tenant_id_fkey",
+          "public",
+          "\"public\".\"audit_logs\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.bom_items.bom_items_bom_id_fkey",
+    "label": "Add foreign key \"bom_items_bom_id_fkey\" on \"bom_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "bom_items_bom_id_fkey",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"bom_items_bom_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bom_items_bom_id_fkey",
+          "public",
+          "\"public\".\"bom_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"bom_items_bom_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"bom_items\"\nADD CONSTRAINT \"bom_items_bom_id_fkey\"\nFOREIGN KEY (\"bom_id\")\nREFERENCES \"public\".\"boms\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"bom_items_bom_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bom_items_bom_id_fkey",
+          "public",
+          "\"public\".\"bom_items\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.bom_items.bom_items_material_id_fkey",
+    "label": "Add foreign key \"bom_items_material_id_fkey\" on \"bom_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "bom_items_material_id_fkey",
+        "table": "bom_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"bom_items_material_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bom_items_material_id_fkey",
+          "public",
+          "\"public\".\"bom_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"bom_items_material_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"bom_items\"\nADD CONSTRAINT \"bom_items_material_id_fkey\"\nFOREIGN KEY (\"material_id\")\nREFERENCES \"public\".\"materials\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"bom_items_material_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "bom_items_material_id_fkey",
+          "public",
+          "\"public\".\"bom_items\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.boms.boms_product_id_fkey",
+    "label": "Add foreign key \"boms_product_id_fkey\" on \"boms\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "boms_product_id_fkey",
+        "table": "boms"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"boms_product_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "boms_product_id_fkey",
+          "public",
+          "\"public\".\"boms\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"boms_product_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"boms\"\nADD CONSTRAINT \"boms_product_id_fkey\"\nFOREIGN KEY (\"product_id\")\nREFERENCES \"public\".\"products\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"boms_product_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "boms_product_id_fkey",
+          "public",
+          "\"public\".\"boms\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.materials.materials_tenant_id_fkey",
+    "label": "Add foreign key \"materials_tenant_id_fkey\" on \"materials\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "materials_tenant_id_fkey",
+        "table": "materials"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"materials_tenant_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "materials_tenant_id_fkey",
+          "public",
+          "\"public\".\"materials\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"materials_tenant_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"materials\"\nADD CONSTRAINT \"materials_tenant_id_fkey\"\nFOREIGN KEY (\"tenant_id\")\nREFERENCES \"public\".\"tenants\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"materials_tenant_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "materials_tenant_id_fkey",
+          "public",
+          "\"public\".\"materials\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.products.products_tenant_id_fkey",
+    "label": "Add foreign key \"products_tenant_id_fkey\" on \"products\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "products_tenant_id_fkey",
+        "table": "products"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"products_tenant_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "products_tenant_id_fkey",
+          "public",
+          "\"public\".\"products\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"products_tenant_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"products\"\nADD CONSTRAINT \"products_tenant_id_fkey\"\nFOREIGN KEY (\"tenant_id\")\nREFERENCES \"public\".\"tenants\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"products_tenant_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "products_tenant_id_fkey",
+          "public",
+          "\"public\".\"products\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.products.products_current_bom_id_fkey",
+    "label": "Add foreign key \"products_current_bom_id_fkey\" on \"products\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "products_current_bom_id_fkey",
+        "table": "products"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"products_current_bom_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "products_current_bom_id_fkey",
+          "public",
+          "\"public\".\"products\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"products_current_bom_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"products\"\nADD CONSTRAINT \"products_current_bom_id_fkey\"\nFOREIGN KEY (\"current_bom_id\")\nREFERENCES \"public\".\"boms\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"products_current_bom_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "products_current_bom_id_fkey",
+          "public",
+          "\"public\".\"products\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.sales_order_items.sales_order_items_sales_order_id_fkey",
+    "label": "Add foreign key \"sales_order_items_sales_order_id_fkey\" on \"sales_order_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "sales_order_items_sales_order_id_fkey",
+        "table": "sales_order_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"sales_order_items_sales_order_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "sales_order_items_sales_order_id_fkey",
+          "public",
+          "\"public\".\"sales_order_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"sales_order_items_sales_order_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"sales_order_items\"\nADD CONSTRAINT \"sales_order_items_sales_order_id_fkey\"\nFOREIGN KEY (\"sales_order_id\")\nREFERENCES \"public\".\"sales_orders\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"sales_order_items_sales_order_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "sales_order_items_sales_order_id_fkey",
+          "public",
+          "\"public\".\"sales_order_items\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.sales_order_items.sales_order_items_product_id_fkey",
+    "label": "Add foreign key \"sales_order_items_product_id_fkey\" on \"sales_order_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "sales_order_items_product_id_fkey",
+        "table": "sales_order_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"sales_order_items_product_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "sales_order_items_product_id_fkey",
+          "public",
+          "\"public\".\"sales_order_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"sales_order_items_product_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"sales_order_items\"\nADD CONSTRAINT \"sales_order_items_product_id_fkey\"\nFOREIGN KEY (\"product_id\")\nREFERENCES \"public\".\"products\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"sales_order_items_product_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "sales_order_items_product_id_fkey",
+          "public",
+          "\"public\".\"sales_order_items\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.sales_orders.sales_orders_tenant_id_fkey",
+    "label": "Add foreign key \"sales_orders_tenant_id_fkey\" on \"sales_orders\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "sales_orders_tenant_id_fkey",
+        "table": "sales_orders"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"sales_orders_tenant_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "sales_orders_tenant_id_fkey",
+          "public",
+          "\"public\".\"sales_orders\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"sales_orders_tenant_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"sales_orders\"\nADD CONSTRAINT \"sales_orders_tenant_id_fkey\"\nFOREIGN KEY (\"tenant_id\")\nREFERENCES \"public\".\"tenants\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"sales_orders_tenant_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "sales_orders_tenant_id_fkey",
+          "public",
+          "\"public\".\"sales_orders\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.stock_movements.stock_movements_tenant_id_fkey",
+    "label": "Add foreign key \"stock_movements_tenant_id_fkey\" on \"stock_movements\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "stock_movements_tenant_id_fkey",
+        "table": "stock_movements"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"stock_movements_tenant_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stock_movements_tenant_id_fkey",
+          "public",
+          "\"public\".\"stock_movements\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"stock_movements_tenant_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"stock_movements\"\nADD CONSTRAINT \"stock_movements_tenant_id_fkey\"\nFOREIGN KEY (\"tenant_id\")\nREFERENCES \"public\".\"tenants\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"stock_movements_tenant_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stock_movements_tenant_id_fkey",
+          "public",
+          "\"public\".\"stock_movements\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.stock_movements.stock_movements_material_id_fkey",
+    "label": "Add foreign key \"stock_movements_material_id_fkey\" on \"stock_movements\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "stock_movements_material_id_fkey",
+        "table": "stock_movements"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"stock_movements_material_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stock_movements_material_id_fkey",
+          "public",
+          "\"public\".\"stock_movements\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"stock_movements_material_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"stock_movements\"\nADD CONSTRAINT \"stock_movements_material_id_fkey\"\nFOREIGN KEY (\"material_id\")\nREFERENCES \"public\".\"materials\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"stock_movements_material_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stock_movements_material_id_fkey",
+          "public",
+          "\"public\".\"stock_movements\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.stock_movements.stock_movements_warehouse_id_fkey",
+    "label": "Add foreign key \"stock_movements_warehouse_id_fkey\" on \"stock_movements\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "stock_movements_warehouse_id_fkey",
+        "table": "stock_movements"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"stock_movements_warehouse_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stock_movements_warehouse_id_fkey",
+          "public",
+          "\"public\".\"stock_movements\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"stock_movements_warehouse_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"stock_movements\"\nADD CONSTRAINT \"stock_movements_warehouse_id_fkey\"\nFOREIGN KEY (\"warehouse_id\")\nREFERENCES \"public\".\"warehouses\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"stock_movements_warehouse_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "stock_movements_warehouse_id_fkey",
+          "public",
+          "\"public\".\"stock_movements\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.warehouses.warehouses_tenant_id_fkey",
+    "label": "Add foreign key \"warehouses_tenant_id_fkey\" on \"warehouses\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "warehouses_tenant_id_fkey",
+        "table": "warehouses"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"warehouses_tenant_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "warehouses_tenant_id_fkey",
+          "public",
+          "\"public\".\"warehouses\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"warehouses_tenant_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"warehouses\"\nADD CONSTRAINT \"warehouses_tenant_id_fkey\"\nFOREIGN KEY (\"tenant_id\")\nREFERENCES \"public\".\"tenants\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"warehouses_tenant_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "warehouses_tenant_id_fkey",
+          "public",
+          "\"public\".\"warehouses\""
+        ]
+      }
+    ]
+  }
+]

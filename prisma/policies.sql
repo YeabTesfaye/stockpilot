@@ -120,6 +120,21 @@ CREATE POLICY stock_movements_tenant_isolation ON stock_movements
   FOR ALL
   USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
 
+-- sales_orders: a row is visible only to members of its tenant.
+CREATE POLICY sales_orders_tenant_isolation ON sales_orders
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+
+-- sales_order_items: a row is visible only to members of its sales order's tenant.
+CREATE POLICY sales_order_items_tenant_isolation ON sales_order_items
+  FOR ALL
+  USING (
+    sales_order_id IN (
+      SELECT id FROM sales_orders
+      WHERE tenant_id = current_setting('app.current_tenant_id', true)::text
+    )
+  );
+
 -- ---------------------------------------------------------------------------
 -- 4. Footnotes
 -- ---------------------------------------------------------------------------

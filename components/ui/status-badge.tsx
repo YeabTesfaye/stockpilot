@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-type StatusVariant = 'healthy' | 'low' | 'out' | 'neutral' | 'warning';
+type StatusVariant = 'healthy' | 'low' | 'out' | 'neutral' | 'warning' | 'danger';
 
 interface StatusBadgeProps {
   variant: StatusVariant;
@@ -15,6 +15,7 @@ const variants: Record<StatusVariant, string> = {
   out: 'bg-red-500/15 text-red-600 dark:text-red-400',
   neutral: 'bg-muted text-muted-foreground',
   warning: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+  danger: 'bg-red-500/15 text-red-600 dark:text-red-400',
 };
 
 export function StatusBadge({ variant, children, className }: StatusBadgeProps) {

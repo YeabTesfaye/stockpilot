@@ -131,6 +131,38 @@ model Warehouse {
   @@map("warehouses")
 }
 
+// ── Sales orders (Day 15) ────────────────────────────────────────────────
+// A sales order represents customer demand. Requirements are exploded from
+// the order's line items via each product's current BOM.
+//
+// SalesOrder and SalesOrderItem are tenant-owned and RLS-protected.
+
+model SalesOrder {
+  id          String   @id @default(uuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    String   @map("tenant_id")
+  customer    String   @map("customer")
+  status      String   @default("DRAFT") @map("status")
+  createdAt   TimestamptzString @default(now()) @map("created_at")
+  updatedAt   temporal.updatedAtString() @map("updated_at")
+
+  items       SalesOrderItem[]
+
+  @@map("sales_orders")
+}
+
+model SalesOrderItem {
+  id            String   @id @default(uuid())
+  salesOrder    SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  salesOrderId  String   @map("sales_order_id")
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId     String   @map("product_id")
+  quantity      Int      @map("quantity")
+  createdAt     TimestamptzString @default(now()) @map("created_at")
+
+  @@map("sales_order_items")
+}
+
 // Versioned bill of materials (Day 5).
 // Each product has a BOM — the latest version is the active one.
 // BOMItem rows belong to a specific BOM version, not directly to the product.

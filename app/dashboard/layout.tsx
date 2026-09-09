@@ -69,6 +69,13 @@ export default async function DashboardLayout({
             <History className="size-4" />
             Adjustments
           </Link>
+          <Link
+            href="/sales-orders"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <Package className="size-4" />
+            Sales orders
+          </Link>
         </nav>
 
         <div className="border-t p-3">

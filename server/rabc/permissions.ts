@@ -13,6 +13,9 @@ export const Action = {
   VIEW_PRODUCTION: 'view_production',
   VIEW_PURCHASING: 'view_purchasing',
   VIEW_PLANNING: 'view_planning',
+  VIEW_SALES_ORDERS: 'view_sales_orders',
+  CREATE_SALES_ORDER: 'create_sales_order',
+  EXPLODE_REQUIREMENTS: 'explode_requirements',
 
   // Stock operations
   ADJUST_STOCK: 'adjust_stock',
@@ -162,6 +165,21 @@ export const PERMISSIONS: Record<Action, Role[]> = {
 
   // Purchasing — purchasing and above
   [Action.CREATE_PURCHASE_RECOMMENDATION]: [Role.OWNER, Role.PURCHASING],
+
+  // Sales orders — production manager and above
+  [Action.VIEW_SALES_ORDERS]: [
+    Role.OWNER,
+    Role.PRODUCTION_MANAGER,
+    Role.PURCHASING,
+    Role.WAREHOUSE_STAFF,
+    Role.VIEWER,
+  ],
+  [Action.CREATE_SALES_ORDER]: [Role.OWNER, Role.PRODUCTION_MANAGER],
+  [Action.EXPLODE_REQUIREMENTS]: [
+    Role.OWNER,
+    Role.PRODUCTION_MANAGER,
+    Role.PURCHASING,
+  ],
 
   // Settings / admin — owner only
   [Action.MANAGE_USERS]: [Role.OWNER],
