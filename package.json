@@ -9,7 +9,8 @@
     "db:migrate": "dotenv -e .env -- npx prisma db migrate",
     "start": "next start",
     "lint": "eslint",
-    "db:seed": "dotenv -e .env -- tsx prisma/seed.ts"
+    "db:seed": "dotenv -e .env -- tsx prisma/seed.ts",
+    "db:apply-week3": "dotenv -e .env -- tsx scripts/apply_week3_migration.mjs"
   },
   "dependencies": {
     "@prisma/cli-engine": "^0.3.0",

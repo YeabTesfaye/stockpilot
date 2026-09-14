@@ -153,14 +153,16 @@ model PurchaseOrder {
 }
 
 model PurchaseOrderItem {
-  id            String   @id @default(uuid())
-  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  id              String   @id @default(uuid())
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
   purchaseOrderId String   @map("purchase_order_id")
-  material      Material @relation(fields: [materialId], references: [id])
-  materialId    String   @map("material_id")
-  quantity      Int      @map("quantity")
-  unitPrice     Float    @default(0) @map("unit_price")
-  createdAt     TimestamptzString @default(now()) @map("created_at")
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId        String   @map("tenant_id")
+  material        Material @relation(fields: [materialId], references: [id])
+  materialId      String   @map("material_id")
+  quantity        Int      @map("quantity")
+  unitPrice       Float    @default(0) @map("unit_price")
+  createdAt       TimestamptzString @default(now()) @map("created_at")
 
   @@map("purchase_order_items")
 }

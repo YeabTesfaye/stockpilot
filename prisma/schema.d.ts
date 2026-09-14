@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'b75eb1c41b640fb8cf4d2d6ceadca12044293b5cbf0bc467c563130f2c53073d'>;
+  StorageHashBase<'984e7dd9a46b939d760c436b840bbb8a69e44e6955958309b8bbeaa68b8daa20'>;
 export type ExecutionHash =
   ExecutionHashBase<'44c173d1d31baf121fde0bace1cdbefe04d423fa49dfd222f07176ef1c83e35d'>;
 export type ProfileHash =
@@ -347,6 +347,7 @@ export type FieldOutputTypes = {
     readonly PurchaseOrderItem: {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly purchaseOrderId: CodecTypes['pg/text@1']['output'];
+      readonly tenantId: CodecTypes['pg/text@1']['output'];
       readonly materialId: CodecTypes['pg/text@1']['output'];
       readonly quantity: CodecTypes['pg/int4@1']['output'];
       readonly unitPrice: CodecTypes['pg/float8@1']['output'];
@@ -547,6 +548,7 @@ export type FieldInputTypes = {
     readonly PurchaseOrderItem: {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly purchaseOrderId: CodecTypes['pg/text@1']['input'];
+      readonly tenantId: CodecTypes['pg/text@1']['input'];
       readonly materialId: CodecTypes['pg/text@1']['input'];
       readonly quantity: CodecTypes['pg/int4@1']['input'];
       readonly unitPrice: CodecTypes['pg/float8@1']['input'];
@@ -740,6 +742,7 @@ export type StorageColumnTypes = {
       readonly material_id: CodecTypes['pg/text@1']['output'];
       readonly purchase_order_id: CodecTypes['pg/text@1']['output'];
       readonly quantity: CodecTypes['pg/int4@1']['output'];
+      readonly tenant_id: CodecTypes['pg/text@1']['output'];
       readonly unit_price: CodecTypes['pg/float8@1']['output'];
     };
     readonly purchase_orders: {
@@ -940,6 +943,7 @@ export type StorageColumnInputTypes = {
       readonly material_id: CodecTypes['pg/text@1']['input'];
       readonly purchase_order_id: CodecTypes['pg/text@1']['input'];
       readonly quantity: CodecTypes['pg/int4@1']['input'];
+      readonly tenant_id: CodecTypes['pg/text@1']['input'];
       readonly unit_price: CodecTypes['pg/float8@1']['input'];
     };
     readonly purchase_orders: {
@@ -1837,6 +1841,11 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                 };
+                readonly tenant_id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
                 readonly material_id: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -1873,6 +1882,12 @@ type ContractBase = Omit<
                   readonly unique: false;
                 },
                 {
+                  readonly name: 'purchase_order_items_tenant_id_idx_41c0d441';
+                  readonly prefix: 'purchase_order_items_tenant_id_idx';
+                  readonly columns: readonly ['tenant_id'];
+                  readonly unique: false;
+                },
+                {
                   readonly name: 'purchase_order_items_material_id_idx_1234cc3b';
                   readonly prefix: 'purchase_order_items_material_id_idx';
                   readonly columns: readonly ['material_id'];
@@ -1889,6 +1904,18 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'purchase_orders';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'purchase_order_items';
+                    readonly columns: readonly ['tenant_id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'tenants';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -3516,6 +3543,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly tenantId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly materialId: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -3559,6 +3590,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly tenant: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Tenant';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['tenantId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'purchase_order_items';
@@ -3566,6 +3608,7 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly id: { readonly column: 'id' };
                 readonly purchaseOrderId: { readonly column: 'purchase_order_id' };
+                readonly tenantId: { readonly column: 'tenant_id' };
                 readonly materialId: { readonly column: 'material_id' };
                 readonly quantity: { readonly column: 'quantity' };
                 readonly unitPrice: { readonly column: 'unit_price' };

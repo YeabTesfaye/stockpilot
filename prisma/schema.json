@@ -1460,6 +1460,13 @@
                   "kind": "scalar"
                 }
               },
+              "tenantId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "unitPrice": {
                 "nullable": false,
                 "type": {
@@ -1498,6 +1505,21 @@
                   "model": "PurchaseOrder",
                   "namespace": "public"
                 }
+              },
+              "tenant": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "tenantId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Tenant",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -1516,6 +1538,9 @@
                 },
                 "quantity": {
                   "column": "quantity"
+                },
+                "tenantId": {
+                  "column": "tenant_id"
                 },
                 "unitPrice": {
                   "column": "unit_price"
@@ -3518,6 +3543,11 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "tenant_id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
                 "unit_price": {
                   "codecId": "pg/float8@1",
                   "default": {
@@ -3544,6 +3574,23 @@
                     ],
                     "namespaceId": "public",
                     "tableName": "purchase_orders"
+                  }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "tenant_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "purchase_order_items"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "tenants"
                   }
                 },
                 {
@@ -3578,6 +3625,14 @@
                   ],
                   "name": "purchase_order_items_purchase_order_id_idx_a047588b",
                   "prefix": "purchase_order_items_purchase_order_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "tenant_id"
+                  ],
+                  "name": "purchase_order_items_tenant_id_idx_41c0d441",
+                  "prefix": "purchase_order_items_tenant_id_idx",
                   "unique": false
                 }
               ],
@@ -4536,7 +4591,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "b75eb1c41b640fb8cf4d2d6ceadca12044293b5cbf0bc467c563130f2c53073d"
+    "storageHash": "984e7dd9a46b939d760c436b840bbb8a69e44e6955958309b8bbeaa68b8daa20"
   },
   "execution": {
     "executionHash": "44c173d1d31baf121fde0bace1cdbefe04d423fa49dfd222f07176ef1c83e35d",

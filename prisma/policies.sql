@@ -140,10 +140,15 @@ CREATE POLICY purchase_orders_tenant_isolation ON purchase_orders
   FOR ALL
   USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
 
--- purchase_order_items: a row is visible only to members of its tenant.
+-- purchase_order_items: a row is visible only to members of its purchase order's tenant.
 CREATE POLICY purchase_order_items_tenant_isolation ON purchase_order_items
   FOR ALL
-  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+  USING (
+    purchase_order_id IN (
+      SELECT id FROM purchase_orders
+      WHERE tenant_id = current_setting('app.current_tenant_id', true)::text
+    )
+  );
 
 -- suppliers: a row is visible only to members of its tenant.
 CREATE POLICY suppliers_tenant_isolation ON suppliers

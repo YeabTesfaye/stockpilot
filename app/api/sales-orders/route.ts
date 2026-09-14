@@ -33,10 +33,10 @@ export async function GET() {
       const itemCount = await db.orm.public.SalesOrderItem
         .select('id')
         .where((i) => i.salesOrderId.eq(row.id))
-        .count();
+        .all();
       return {
         ...row,
-        itemCount: Number(itemCount),
+        itemCount: itemCount.length,
       };
     }));
 
