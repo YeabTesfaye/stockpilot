@@ -6,7 +6,8 @@ import { getSessionUser } from '@/server/auth/session';
 import { SESSION_COOKIE } from '@/server/auth/cookie';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { UserMenu } from '@/components/user-menu';
-import { History, Package, Building, Boxes } from 'lucide-react';
+import { NotificationBell } from '@/components/notification-bell';
+import { History, Package, Building, Boxes, Bell, TrendingUp, Factory } from 'lucide-react';
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const store = await cookies();
@@ -70,6 +71,41 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <Package className="size-4" />
             Sales orders
           </Link>
+          <Link
+            href="/purchasing/recommendations"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <Package className="size-4" />
+            Purchase recs
+          </Link>
+          <Link
+            href="/purchasing/suppliers"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <Building className="size-4" />
+            Suppliers
+          </Link>
+          <Link
+            href="/notifications"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <Bell className="size-4" />
+            Notifications
+          </Link>
+          <Link
+            href="/production/schedule"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <Factory className="size-4" />
+            Production
+          </Link>
+          <Link
+            href="/reports/forecast"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <TrendingUp className="size-4" />
+            Forecast
+          </Link>
         </nav>
 
         <div className="border-t p-3">
@@ -89,6 +125,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <span className="text-muted-foreground hidden truncate text-sm sm:inline">
               {user.name}
             </span>
+            <NotificationBell />
             <ThemeToggle />
           </div>
         </header>

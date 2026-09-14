@@ -131,6 +131,138 @@ model Warehouse {
   @@map("warehouses")
 }
 
+// Purchase orders (Day 16) ─────────────────────────────────────────────
+// A purchase order is created from a recommendation and tracks supplier
+// fulfillment. Status moves from DRAFT → PENDING → RECEIVED/CANCELLED.
+
+model PurchaseOrder {
+  id          String   @id @default(uuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    String   @map("tenant_id")
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  supplierId  String   @map("supplier_id")
+  recommendationId String? @map("recommendation_id")
+  status      String   @default("DRAFT") @map("status")
+  expectedDate TimestamptzString? @map("expected_date")
+  createdAt   TimestamptzString @default(now()) @map("created_at")
+  updatedAt   temporal.updatedAtString() @map("updated_at")
+
+  items       PurchaseOrderItem[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id            String   @id @default(uuid())
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  purchaseOrderId String   @map("purchase_order_id")
+  material      Material @relation(fields: [materialId], references: [id])
+  materialId    String   @map("material_id")
+  quantity      Int      @map("quantity")
+  unitPrice     Float    @default(0) @map("unit_price")
+  createdAt     TimestamptzString @default(now()) @map("created_at")
+
+  @@map("purchase_order_items")
+}
+
+// ── Suppliers (Day 17) ─────────────────────────────────────────────────────
+// Suppliers are tenant-owned. Each supplier can supply multiple materials
+// at different unit prices. SupplierMaterial is the join table.
+
+model Supplier {
+  id          String   @id @default(uuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    String   @map("tenant_id")
+  name        String   @map("name")
+  code        String?  @map("code")
+  contactName String?  @map("contact_name")
+  email       String?  @map("email")
+  phone       String?  @map("phone")
+  leadTimeDays Int     @default(7) @map("lead_time_days")
+  reliabilityScore Float @default(0) @map("reliability_score")
+  createdAt   TimestamptzString @default(now()) @map("created_at")
+  updatedAt   temporal.updatedAtString() @map("updated_at")
+
+  materials   SupplierMaterial[]
+  purchaseOrders PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+model SupplierMaterial {
+  id          String   @id @default(uuid())
+  supplier    Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplierId  String   @map("supplier_id")
+  material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  materialId  String   @map("material_id")
+  unitPrice   Float    @map("unit_price")
+  leadTimeDays Int     @default(7) @map("lead_time_days")
+  createdAt   TimestamptzString @default(now()) @map("created_at")
+
+  @@unique([supplierId, materialId])
+  @@map("supplier_materials")
+}
+
+// ── Notifications (Day 19) ─────────────────────────────────────────────────
+// In-app notifications for rule-triggered alerts (shortage, low stock, etc.).
+// Tenant-scoped so each user only sees their tenant's notifications.
+
+model Notification {
+  id          String   @id @default(uuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    String   @map("tenant_id")
+  userId      String   @map("user_id")
+  type        String   @map("type")
+  title       String   @map("title")
+  message     String   @map("message")
+  resourceType String?  @map("resource_type")
+  resourceId  String?  @map("resource_id")
+  read        Boolean  @default(false) @map("read")
+  createdAt   TimestamptzString @default(now()) @map("created_at")
+
+  @@index([tenantId, userId, read])
+  @@map("notifications")
+}
+
+// ── Production scheduling (Day 20) ─────────────────────────────────────────
+// Machines are tenant-owned resources. ProductionOrders are scheduled
+// against machines and gated on material availability.
+
+model Machine {
+  id          String   @id @default(uuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    String   @map("tenant_id")
+  name        String   @map("name")
+  code        String?  @map("code")
+  capacityPerDay Int   @default(1) @map("capacity_per_day")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   TimestamptzString @default(now()) @map("created_at")
+  updatedAt   temporal.updatedAtString() @map("updated_at")
+
+  orders      ProductionOrder[]
+
+  @@map("machines")
+}
+
+model ProductionOrder {
+  id          String   @id @default(uuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    String   @map("tenant_id")
+  product     Product  @relation(fields: [productId], references: [id])
+  productId   String   @map("product_id")
+  machine     Machine  @relation(fields: [machineId], references: [id])
+  machineId   String   @map("machine_id")
+  quantity    Int      @map("quantity")
+  scheduledDate TimestamptzString? @map("scheduled_date")
+  startedAt   TimestamptzString? @map("started_at")
+  completedAt TimestamptzString? @map("completed_at")
+  status      String   @default("SCHEDULED") @map("status")
+  createdAt   TimestamptzString @default(now()) @map("created_at")
+  updatedAt   temporal.updatedAtString() @map("updated_at")
+
+  @@map("production_orders")
+}
+
 // ── Sales orders (Day 15) ────────────────────────────────────────────────
 // A sales order represents customer demand. Requirements are exploded from
 // the order's line items via each product's current BOM.

@@ -10,6 +10,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useRouter } from 'next/navigation';
+import { Clock } from 'lucide-react';
+
+function ReorderStatusBadge({ available, minStock }: { available: number; minStock: number }) {
+  if (minStock <= 0) return null;
+  if (available <= 0) return <StatusBadge variant="danger"><Clock className="mr-1 h-3 w-3" />Out of stock</StatusBadge>;
+  if (available <= minStock) return <StatusBadge variant="warning"><Clock className="mr-1 h-3 w-3" />Reorder</StatusBadge>;
+  if (available <= minStock * 1.2) return <StatusBadge variant="low"><Clock className="mr-1 h-3 w-3" />Low</StatusBadge>;
+  return null;
+}
 
 interface Material {
   id: string;
@@ -18,6 +27,8 @@ interface Material {
   description: string | null;
   unit: string;
   minStock: number;
+  currentStock: number;
+  reservedQty: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -107,6 +118,14 @@ export default function MaterialsPage() {
       accessor: 'unit',
       header: 'Unit',
       cell: (row) => <span className="text-sm text-muted-foreground">{row.unit}</span>,
+    },
+    {
+      accessor: 'reorderStatus',
+      header: 'Reorder',
+      cell: (row) => {
+        const available = row.currentStock - row.reservedQty;
+        return ReorderStatusBadge({ available, minStock: row.minStock });
+      },
     },
     {
       accessor: 'minStock',

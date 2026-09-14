@@ -135,6 +135,41 @@ CREATE POLICY sales_order_items_tenant_isolation ON sales_order_items
     )
   );
 
+-- purchase_orders: a row is visible only to members of its tenant.
+CREATE POLICY purchase_orders_tenant_isolation ON purchase_orders
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+
+-- purchase_order_items: a row is visible only to members of its tenant.
+CREATE POLICY purchase_order_items_tenant_isolation ON purchase_order_items
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+
+-- suppliers: a row is visible only to members of its tenant.
+CREATE POLICY suppliers_tenant_isolation ON suppliers
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+
+-- supplier_materials: a row is visible only to members of its tenant.
+CREATE POLICY supplier_materials_tenant_isolation ON supplier_materials
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+
+-- notifications: a row is visible only to members of its tenant.
+CREATE POLICY notifications_tenant_isolation ON notifications
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+
+-- machines: a row is visible only to members of its tenant.
+CREATE POLICY machines_tenant_isolation ON machines
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+
+-- production_orders: a row is visible only to members of its tenant.
+CREATE POLICY production_orders_tenant_isolation ON production_orders
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::text);
+
 -- ---------------------------------------------------------------------------
 -- 4. Footnotes
 -- ---------------------------------------------------------------------------
