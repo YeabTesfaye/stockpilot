@@ -88,7 +88,7 @@ jobs:
             sleep 1
           done
       - name: Apply schema migration
-        run: pnpm prisma db migrate deploy 
+        run: pnpm prisma db migrate
       - name: Seed the database
         run: pnpm exec tsx prisma/seed.ts
       - name: Run unit + integration tests
