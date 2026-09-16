@@ -88,19 +88,21 @@ jobs:
             sleep 1
           done
       - name: Apply schema migration
-        run: dotenv -e .env -- pnpm prisma db migrate
+        run: pnpm prisma db migrate deploy 
       - name: Seed the database
-        run: dotenv -e .env -- pnpm db:seed
+        run: pnpm exec tsx prisma/seed.ts
       - name: Run unit + integration tests
-        run: dotenv -e .env -- pnpm exec tsx tests/unit/reorder-point.test.ts && dotenv -e .env -- pnpm exec tsx tests/unit/max-buildable.test.ts
+        run: |
+          pnpm exec tsx tests/unit/reorder-point.test.ts
+          pnpm exec tsx tests/unit/max-buildable.test.ts
       - name: Run concurrency race test (10 iterations)
-        run: dotenv -e .env -- pnpm exec tsx tests/concurrency/stock-race.test.ts
+        run: pnpm exec tsx tests/concurrency/stock-race.test.ts
       - name: Run smoke test against the dev server
         run: |
           pnpm dev &
           DEV_PID=$!
           sleep 8
-          dotenv -e .env -- pnpm exec tsx tests/integration/smoke-overview.test.ts
+          pnpm exec tsx tests/integration/smoke-overview.test.ts
           kill $DEV_PID || true
 
   build:
