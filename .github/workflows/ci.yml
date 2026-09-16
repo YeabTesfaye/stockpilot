@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma contract emit
+      - run: pnpm exec tsc --noEmit
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: stockpilot
+          POSTGRES_PASSWORD: stockpilot
+          POSTGRES_DB: stockpilot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U stockpilot -d stockpilot"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://stockpilot:stockpilot@localhost:5432/stockpilot?schema=public
+      REDIS_URL: redis://localhost:6379
+      NODE_ENV: test
+      LOG_LEVEL: error
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma contract emit
+      - name: Wait for Postgres
+        run: |
+          for i in $(seq 1 30); do
+            pg_isready -h localhost -p 5432 -U stockpilot && break
+            sleep 1
+          done
+      - name: Apply schema migration
+        run: dotenv -e .env -- pnpm prisma db migrate
+      - name: Seed the database
+        run: dotenv -e .env -- pnpm db:seed
+      - name: Run unit + integration tests
+        run: dotenv -e .env -- pnpm exec tsx tests/unit/reorder-point.test.ts && dotenv -e .env -- pnpm exec tsx tests/unit/max-buildable.test.ts
+      - name: Run concurrency race test (10 iterations)
+        run: dotenv -e .env -- pnpm exec tsx tests/concurrency/stock-race.test.ts
+      - name: Run smoke test against the dev server
+        run: |
+          pnpm dev &
+          DEV_PID=$!
+          sleep 8
+          dotenv -e .env -- pnpm exec tsx tests/integration/smoke-overview.test.ts
+          kill $DEV_PID || true
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [typecheck, lint, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma contract emit
+      - run: pnpm build:app
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t stockpilot:${{ github.sha }} -f Dockerfile .
+      - name: Image is runnable (smoke)
+        run: |
+          docker run --rm -p 3000:3000 -e DATABASE_URL=postgresql://stockpilot:stockpilot@host.docker.internal:5432/stockpilot?schema=public stockpilot:${{ github.sha }} &
+          sleep 10
+          curl -fsS http://localhost:3000/api/health || exit 1

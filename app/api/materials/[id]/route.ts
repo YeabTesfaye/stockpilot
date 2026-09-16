@@ -61,19 +61,33 @@ export async function PUT(
 
   return withTenant(tenantId, async () => {
     try {
-      const item = await materials.updateMaterial(id, {
+      const updated = await materials.updateMaterial(id, {
         name: typeof body.name === 'string' ? body.name : undefined,
         sku: typeof body.sku === 'string' ? body.sku : undefined,
-        description: typeof body.description === 'string' ? body.description : body.description === null ? null : undefined,
+        description:
+          body.description === undefined
+            ? undefined
+            : typeof body.description === 'string'
+              ? body.description
+              : null,
         unit: typeof body.unit === 'string' ? body.unit : undefined,
-        minStock: typeof body.minStock === 'number' ? body.minStock : undefined,
-        currentStock: typeof body.currentStock === 'number' ? body.currentStock : undefined,
-        reservedQty: typeof body.reservedQty === 'number' ? body.reservedQty : undefined,
+        currentStock:
+          body.currentStock !== undefined
+            ? Number(body.currentStock)
+            : undefined,
+        reservedQty:
+          body.reservedQty !== undefined
+            ? Number(body.reservedQty)
+            : undefined,
+        minStock:
+          body.minStock !== undefined
+            ? Number(body.minStock)
+            : undefined,
       });
-      return NextResponse.json(item);
+      return NextResponse.json(updated);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      return NextResponse.json({ error: message }, { status: 404 });
+      return NextResponse.json({ error: message }, { status: 400 });
     }
   });
 }
