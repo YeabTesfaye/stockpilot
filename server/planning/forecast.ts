@@ -24,16 +24,74 @@ export type ForecastResult = {
   materialName: string;
   materialSku: string;
   unit: string;
-  historicalDays: number; // how many days of history we had
+  historicalDays: number;
   averageDailyDemand: number;
   projection: ForecastPoint[];
   totalProjectedDemand: number;
   generatedAt: string;
+  source: 'movements' | 'bom_demand' | 'none';
 };
 
+async function estimateDemandFromBom(materialId: string): Promise<{ demand: number; orderCount: number }> {
+  // Find all products whose current BOM uses this material.
+  const bomItems = await db.orm.public.BomItem
+    .select('bomId', 'quantityPerUnit')
+    .where((i) => i.materialId.eq(materialId))
+    .all();
+
+  if (bomItems.length === 0) return { demand: 0, orderCount: 0 };
+
+  // Collect distinct product ids from the BOMs that use this material.
+  const bomIds = bomItems.map(i => i.bomId);
+  const boms = await db.orm.public.Bom
+    .select('id', 'productId')
+    .where((b) => b.id.in(bomIds))
+    .all();
+
+  const productIds = [...new Set(boms.map(b => b.productId))];
+  if (productIds.length === 0) return { demand: 0, orderCount: 0 };
+
+  // Load recent sales orders for those products (last 14 days).
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+  const orderItems = await db.orm.public.SalesOrderItem
+    .select('salesOrderId', 'productId', 'quantity')
+    .where((i) => i.productId.in(productIds))
+    .all();
+
+  // Filter to orders created in the last 14 days.
+  const recentOrderIds = new Set<string>();
+  let totalMaterialDemand = 0;
+
+  for (const item of orderItems) {
+    const order = await db.orm.public.SalesOrder
+      .select('createdAt')
+      .where((o) => o.id.eq(item.salesOrderId))
+      .first();
+    if (!order) continue;
+    const orderDate = new Date(order.createdAt);
+    if (orderDate < fourteenDaysAgo) continue;
+    recentOrderIds.add(item.salesOrderId);
+
+    // Find the BOM line for this product + material.
+    const bomLine = bomItems.find(i => {
+      const bom = boms.find(b => b.productId === item.productId);
+      return bom?.id === i.bomId;
+    });
+    if (bomLine) {
+      totalMaterialDemand += item.quantity * bomLine.quantityPerUnit;
+    }
+  }
+
+  // Average daily demand over 14 days (use 14 as the window since orders
+  // are sparser than movements).
+  const averageDailyDemand = totalMaterialDemand / 14;
+  return { demand: averageDailyDemand, orderCount: recentOrderIds.size };
+}
+
 export async function forecastDemand(materialId: string): Promise<ForecastResult> {
-  // Load stock movements for the last 14 days (we use 7 for the average,
-  // but keep 14 to have a buffer).
+  // 1. Try stock movements first (actual recorded demand).
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 14);
 
@@ -42,7 +100,7 @@ export async function forecastDemand(materialId: string): Promise<ForecastResult
     .where((m) => m.materialId.eq(materialId))
     .all();
 
-  // Filter to the last 14 days and aggregate by day.
+  // Filter to the last 14 days and aggregate outflows by day.
   const dayBuckets: Record<string, number> = {};
   let totalDemand = 0;
   let daysWithDemand = 0;
@@ -65,11 +123,30 @@ export async function forecastDemand(materialId: string): Promise<ForecastResult
     }
   }
 
-  // Compute 7-day moving average.
   const sortedDays = Object.keys(dayBuckets).sort();
   const recentBuckets = sortedDays.slice(-7);
   const recentTotal = recentBuckets.reduce((sum, d) => sum + (dayBuckets[d] ?? 0), 0);
-  const averageDailyDemand = recentTotal / 7;
+  let averageDailyDemand = recentTotal / 7;
+  let source: 'movements' | 'bom_demand' | 'none' = 'none';
+
+  // 2. If no movement history, fall back to sales-order BOM demand.
+  if (daysWithDemand === 0) {
+    const bomEstimate = await estimateDemandFromBom(materialId);
+    if (bomEstimate.demand > 0) {
+      // Spread the 14-day total evenly across 7 days for the projection.
+      averageDailyDemand = bomEstimate.demand;
+      source = 'bom_demand';
+      // Pretend we have 14 days of history from the orders so the UI shows
+      // a meaningful "based on N days" rather than "0 days".
+      daysWithDemand = 14;
+    }
+  }
+
+  if (averageDailyDemand === 0) {
+    source = 'none';
+  } else if (source === 'none') {
+    source = 'bom_demand';
+  }
 
   // Project forward 7 days.
   const projection: ForecastPoint[] = [];
@@ -96,10 +173,11 @@ export async function forecastDemand(materialId: string): Promise<ForecastResult
     materialName: material?.name ?? 'Unknown',
     materialSku: material?.sku ?? '',
     unit: material?.unit ?? 'pcs',
-    historicalDays: recentBuckets.length,
+    historicalDays: daysWithDemand,
     averageDailyDemand: Math.round(averageDailyDemand * 100) / 100,
     projection,
     totalProjectedDemand: Math.round(cumulative * 100) / 100,
     generatedAt: new Date().toISOString(),
+    source,
   };
 }

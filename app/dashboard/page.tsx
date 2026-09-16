@@ -19,7 +19,7 @@ import { StatTile } from '@/components/ui/stat-tile';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowRight, AlertTriangle, Package, Factory, TrendingUp, Truck, Bell } from 'lucide-react';
+import { ArrowRight, AlertTriangle, Package, Factory, TrendingUp } from 'lucide-react';
 
 export default async function DashboardPage() {
   const store = await cookies();
@@ -32,7 +32,15 @@ export default async function DashboardPage() {
 
   // Fetch overview numbers server-side.
   const cookie = store.get(SESSION_COOKIE)?.value ?? '';
-  let overview: Awaited<ReturnType<typeof fetchOverview>> | null = null;
+  // Type declared separately so fetchOverview can be defined after the page.
+  type OverviewResponse = {
+    materials: { total: number; outOfStock: number; belowReorder: number };
+    production: { totalOrders: number; atRisk: number; late: number; capacityPerDay: number; scheduledQty: number };
+    sales: { totalOrders: number; openOrders: number };
+    purchasing: { suppliers: number };
+    notifications: { unread: number; total: number };
+  };
+  let overview: OverviewResponse | null = null;
   let fetchError: string | null = null;
 
   try {
@@ -249,13 +257,4 @@ export default async function DashboardPage() {
       )}
     </div>
   );
-}
-
-async function fetchOverview(cookie: string) {
-  const res = await fetch('/api/dashboard/overview', {
-    headers: { cookie },
-    cache: 'no-store',
-  });
-  if (!res.ok) throw new Error(`overview: ${res.status}`);
-  return res.json();
 }

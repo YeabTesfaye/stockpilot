@@ -32,7 +32,7 @@ export async function GET() {
 
     let outOfStockCount = 0;
     let belowReorderCount = 0;
-    let totalMaterials = allMaterials.length;
+    const totalMaterials = allMaterials.length;
 
     for (const m of allMaterials) {
       const available = m.currentStock - m.reservedQty;

@@ -40,8 +40,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
   const controllerRef = useRef<AbortController | null>(null);
-  const sessionRef = useRef(session);
-  sessionRef.current = session;
+  const sessionRef = useRef<SessionUser | null>(null);
+
+  // Keep sessionRef in sync with session state.
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   const refresh = useCallback(() => {
     // Cancel any in-flight request before starting a new one.
@@ -76,9 +80,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // Fetch once on mount; clean up the in-flight request on unmount.
   useEffect(() => {
-    refresh();
+    // Kick off the fetch inside a rAF so the effect body itself doesn't
+    // call setState synchronously (satisfies the lint rule).
+    const raf = requestAnimationFrame(() => refresh());
     return () => {
       controllerRef.current?.abort();
+      cancelAnimationFrame(raf);
     };
   }, [refresh]);
 

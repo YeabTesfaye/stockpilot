@@ -25,6 +25,7 @@ type ForecastResult = {
   projection: ForecastPoint[];
   totalProjectedDemand: number;
   generatedAt: string;
+  source: 'movements' | 'bom_demand' | 'none';
 };
 
 export default function ForecastPage() {
@@ -43,10 +44,12 @@ export default function ForecastPage() {
       const res = await fetch('/api/materials');
       if (res.ok) {
         const data = await res.json();
-        setMaterialOptions(data.map((m: any) => ({
-          value: m.id,
-          label: `${m.sku} — ${m.name}`,
-        })));
+        setMaterialOptions(
+          data.map((m: { id: string; sku: string; name: string }) => ({
+            value: m.id,
+            label: `${m.sku} — ${m.name}`,
+          })),
+        );
       }
     } catch { /* silent */ }
   }
@@ -103,9 +106,9 @@ export default function ForecastPage() {
       ) : forecasts.length === 0 ? (
         <div className="rounded-lg border border-dashed border-muted bg-muted/30 p-8 text-center">
           <TrendingUp className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground">No forecast data available.</p>
+          <p className="text-sm text-muted-foreground">No materials to forecast.</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Stock movements are needed to compute the 7-day moving average.
+            Add materials and create products with BOMs to see demand projections.
           </p>
         </div>
       ) : (
@@ -118,47 +121,67 @@ export default function ForecastPage() {
                     <code className="text-sm font-mono">{fc.materialSku}</code>
                     <span className="text-muted-foreground">— {fc.materialName}</span>
                   </CardTitle>
-                  <StatusBadge variant="neutral">
+                  <StatusBadge
+                    variant={fc.source === 'none' ? 'neutral' : fc.averageDailyDemand > 0 ? 'healthy' : 'neutral'}
+                  >
                     <Activity className="mr-1 h-3 w-3" />
                     {fc.averageDailyDemand.toFixed(1)} {fc.unit}/day avg
                   </StatusBadge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Based on {fc.historicalDays} days of history | Generated{' '}
-                  {new Date(fc.generatedAt).toLocaleTimeString()}
+                  {fc.source === 'movements'
+                    ? `Based on ${fc.historicalDays} days of movement history`
+                    : fc.source === 'bom_demand'
+                      ? `Estimated from ${fc.historicalDays} days of sales-order demand`
+                      : 'No demand history — material is idle'}
+                  {' | '}Generated {new Date(fc.generatedAt).toLocaleTimeString()}
                 </p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {/* Mini bar chart using divs */}
-                  <div className="flex items-end gap-1 h-24">
-                    {fc.projection.map((p, i) => {
-                      const maxVal = Math.max(...fc.projection.map(pp => pp.projectedDemand), 1);
-                      const height = maxVal > 0 ? (p.projectedDemand / maxVal) * 100 : 0;
-                      return (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                          <span className="text-xs text-muted-foreground tabular-nums">
-                            {p.projectedDemand.toFixed(0)}
-                          </span>
-                          <div
-                            className="w-full rounded-t bg-primary/60 transition-all"
-                            style={{ height: `${Math.max(height, 2)}%` }}
-                          />
-                          <span className="text-[10px] text-muted-foreground">
-                            {new Date(p.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                          </span>
-                        </div>
-                      );
-                    })}
+                {fc.source === 'none' ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <TrendingUp className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      No demand history for this material.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {fc.historicalDays === 0
+                        ? 'No stock movements and no sales orders use this material in their BOM.'
+                        : 'Demand is too low to project.'}
+                    </p>
                   </div>
-                  <div className="flex justify-between text-xs text-muted-foreground pt-2 border-t">
-                    <span>Next 7 days:</span>
-                    <span>
-                      <span className="font-medium text-foreground">{fc.totalProjectedDemand.toFixed(0)} {fc.unit}</span>
-                      {' '}total projected demand
-                    </span>
+                ) : (
+                  <div className="space-y-2">
+                    {/* Mini bar chart using divs */}
+                    <div className="flex items-end gap-1 h-24">
+                      {fc.projection.map((p, i) => {
+                        const maxVal = Math.max(...fc.projection.map(pp => pp.projectedDemand), 1);
+                        const height = maxVal > 0 ? (p.projectedDemand / maxVal) * 100 : 0;
+                        return (
+                          <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                            <span className="text-xs text-muted-foreground tabular-nums">
+                              {p.projectedDemand.toFixed(0)}
+                            </span>
+                            <div
+                              className="w-full rounded-t bg-primary/60 transition-all"
+                              style={{ height: `${Math.max(height, 2)}%` }}
+                            />
+                            <span className="text-[10px] text-muted-foreground">
+                              {new Date(p.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground pt-2 border-t">
+                      <span>Next 7 days:</span>
+                      <span>
+                        <span className="font-medium text-foreground">{fc.totalProjectedDemand.toFixed(0)} {fc.unit}</span>
+                        {' '}total projected demand
+                      </span>
+                    </div>
                   </div>
-                </div>
+                  )}
               </CardContent>
             </Card>
           ))}

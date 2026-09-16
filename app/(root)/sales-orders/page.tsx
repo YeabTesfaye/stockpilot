@@ -39,7 +39,13 @@ export default function SalesOrdersPage() {
       const res = await fetch('/api/products');
       if (res.ok) {
         const data = await res.json();
-        setProducts(data.map((p: any) => ({ id: p.id, name: p.name, sku: p.sku })));
+        setProducts(
+          data.map((p: { id: string; name: string; sku: string }) => ({
+            id: p.id,
+            name: p.name,
+            sku: p.sku,
+          })),
+        );
       }
     } catch { /* ignore */ }
   }

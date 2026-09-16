@@ -32,19 +32,17 @@ for (const e of endpoints) {
 
 const latencies = [];
 const errors = [];
-let requestsStarted = 0;
 let requestsCompleted = 0;
 
 function pickEndpoint() {
   return weighted[Math.floor(Math.random() * weighted.length)];
 }
 
-async function worker(id) {
+async function worker() {
   const stopAt = Date.now() + DURATION_MS;
   while (Date.now() < stopAt) {
     const path = pickEndpoint();
     const start = performance.now();
-    requestsStarted++;
     try {
       const res = await fetch(`${BASE}${path}`, {
         headers: COOKIES ? { cookie: COOKIES } : {},
@@ -78,7 +76,7 @@ async function main() {
 
   const workers = [];
   for (let i = 0; i < CONCURRENCY; i++) {
-    workers.push(worker(i));
+    workers.push(worker());
   }
 
   await Promise.all(workers);
@@ -94,7 +92,7 @@ async function main() {
   console.log(`Errors: ${errors.length}`);
   if (errors.length > 0) {
     console.log('Error breakdown:');
-    const byPath = new Map<string, number>();
+    const byPath = new Map();
     for (const e of errors) {
       const key = e.status ? `${e.path} (${e.status})` : `${e.path} (${e.error})`;
       byPath.set(key, (byPath.get(key) || 0) + 1);
