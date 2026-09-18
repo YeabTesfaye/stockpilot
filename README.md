@@ -119,7 +119,33 @@ calculations instead of a black box.
 TypeScript, Next.js 16, PostgreSQL 16, Prisma 8 (contract + raw SQL), Redis 7,
 BullMQ, Docker, Tailwind CSS 4, Radix UI primitives, Lucide icons.
 
-## Setup
+## First run (demo walkthrough)
+
+StockPilot ships with seeded demo data (Acme Manufacturing + Beta Plastics,
+including the CHAIR-001 executive-chair example). After the setup below, the
+fastest way to experience the product is:
+
+1. **Dashboard** — `/dashboard`. Read the stat tiles (materials, orders at risk,
+   production capacity, expected stockouts) and the at-risk list. This is the
+   before-state for the whole demo.
+2. **Max buildable** — open a product page (e.g. CHAIR-001) then
+   `/products/<id>/max-buildable`. Confirm the seed says 420 chairs, limited
+   by backrests. This is the core "can we manufacture N units?" answer.
+3. **Requirements / shortage** — create a sales order for CHAIR-001, then open
+   `/sales-orders/<id>`. The requirements table flags shortage rows with
+   `StatusBadge status="danger"`.
+4. **Purchase recommendations + supplier ranking** — `/purchasing/recommendations`
+   then drill into `/purchasing/recommendations/<id>/suppliers`. Recommended vs
+   alternative suppliers are shown with plain-text reasoning.
+5. **Production schedule** — `/production/schedule`. Machines × days grid with
+   color-coded order chips. Start/complete a production order from
+   `/production/orders` to watch the grid update.
+6. **Movement ledger** — `/inventory/materials/<id>/history`. Every stock
+   change is an append-only row with `MovementTypeBadge` color coding.
+7. **Concurrency demo** — open two tabs on
+   `/inventory/materials/<id>/reserve` and reserve from the same material
+   simultaneously. One succeeds; the other fails with an insufficient-stock
+   alert. This is the Day 12 centerpiece.
 
 ```bash
 docker compose up -d            # Postgres + Redis
@@ -231,45 +257,41 @@ Plastics) with the chair example (CHAIR-001) and 2-3 additional products.
 
 ### Dashboard overview (dark mode)
 
-[Insert screenshot: /dashboard in dark mode showing the stat tiles grid,
-orders-at-risk card, and quick-action links.]
+![Dashboard overview — dark mode](/screenshots/dashboard-dark.png)
 
 ### Dashboard overview (light mode)
 
-[Insert screenshot: /dashboard in light mode.]
+![Dashboard overview — light mode](/screenshots/dashboard-light.png)
 
 ### Max buildable — 420 chairs, limited by Backrests
 
-[Insert screenshot: /products/<chair-id>/max-buildable in dark mode.]
+![Max buildable — dark mode](/screenshots/max-buildable-dark.png)
 
-[Insert screenshot: /products/<chair-id>/max-buildable in light mode.]
+![Max buildable — light mode](/screenshots/max-buildable-light.png)
 
 ### Sales order requirements with shortage rows
 
-[Insert screenshot: /sales-orders/<id> in dark mode showing the RequirementsTable
-with red shortage badges.]
+![Sales order requirements — dark mode](/screenshots/sales-orders-dark.png)
 
-[Insert screenshot: /sales-orders/<id> in light mode.]
+![Sales order requirements — light mode](/screenshots/sales-orders-light.png)
 
 ### Supplier ranking
 
-[Insert screenshot: /purchasing/recommendations/<id>/suppliers in dark mode
-showing Recommended/Alternative badges.]
+![Supplier ranking — dark mode](/screenshots/supplier-ranking-dark.png)
 
-[Insert screenshot: /purchasing/recommendations/<id>/suppliers in light mode.]
+![Supplier ranking — light mode](/screenshots/supplier-ranking-light.png)
 
 ### Production schedule grid
 
-[Insert screenshot: /production/schedule in dark mode showing the machine ×
-orders grid with color-coded status chips.]
+![Production schedule grid — dark mode](/screenshots/schedule-dark.png)
 
-[Insert screenshot: /production/schedule in light mode.]
+![Production schedule grid — light mode](/screenshots/schedule-light.png)
 
 ### Material movement ledger
 
-[Insert screenshot: /inventory/materials/<id>/history in dark mode.]
+![Material movement ledger — dark mode](/screenshots/movement-ledger-dark.png)
 
-[Insert screenshot: /inventory/materials/<id>/history in light mode.]
+![Material movement ledger — light mode](/screenshots/movement-ledger-light.png)
 
 ### Reserve stock — two-tab concurrency demo
 

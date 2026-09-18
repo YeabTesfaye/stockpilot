@@ -30,8 +30,10 @@ export default async function DashboardPage() {
   const { user, memberships } = session;
   const primaryTenant = memberships[0];
 
-  // Fetch overview numbers server-side.
-  const cookie = store.get(SESSION_COOKIE)?.value ?? '';
+  // Fetch overview numbers server-side. The internal fetch needs the full
+  // cookie header (name=value), not just the raw token.
+  const rawCookie = token ?? '';
+  const cookieHeader = rawCookie ? `${SESSION_COOKIE}=${rawCookie}` : '';
   // Type declared separately so fetchOverview can be defined after the page.
   type OverviewResponse = {
     materials: { total: number; outOfStock: number; belowReorder: number };
@@ -45,9 +47,10 @@ export default async function DashboardPage() {
 
   try {
     const res = await fetch('/api/dashboard/overview', {
-      headers: { cookie },
+      headers: { cookie: cookieHeader },
       cache: 'no-store',
     });
+
     if (!res.ok) {
       fetchError = `Overview unavailable (${res.status})`;
     } else {

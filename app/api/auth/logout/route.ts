@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { revokeSession } from '@/server/auth/session';
-import { SESSION_COOKIE, sessionCookieOptions } from '@/server/auth/cookie';
+import { SESSION_COOKIE, sessionCookieClearOptions } from '@/server/auth/cookie';
 
 export async function POST() {
   const store = await cookies();
@@ -14,6 +14,8 @@ export async function POST() {
   }
 
   const res = new NextResponse(null, { status: 204 });
-  res.cookies.set(SESSION_COOKIE, '', { ...sessionCookieOptions(), maxAge: 0 });
+  // sessionCookieClearOptions sets maxAge: 0 plus the same Secure/HttpOnly/
+  // SameSite attributes so the browser actually clears the cookie in prod.
+  res.cookies.set(SESSION_COOKIE, '', sessionCookieClearOptions());
   return res;
 }

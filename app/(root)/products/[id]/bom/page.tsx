@@ -6,6 +6,7 @@ import { ArrowLeft, Plus, Trash2, Package, RefreshCw, Clock } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/ui/page-header';
+import { SelectComponent } from '@/components/ui/select';
 
 interface BomItem {
   id: string;
@@ -331,18 +332,19 @@ export default function BomEditorPage() {
               <div key={index} className="flex items-center gap-3">
                 {/* Material select */}
                 <div className="flex-1">
-                  <select
+                  <SelectComponent
+                    options={materials.map((m) => ({
+                      value: m.id,
+                      label: `${m.sku} — ${m.name}`,
+                    }))}
                     value={row.materialId}
-                    onChange={(e) => updateNewRow(index, 'materialId', e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  >
-                    <option value="">Select material...</option>
-                    {materials.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.sku} — {m.name}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={(v) => updateNewRow(index, 'materialId', v)}
+                    placeholder="Select material..."
+                    displayValue={(v) => {
+                      const m = materials.find((x) => x.id === v);
+                      return m ? `${m.sku} — ${m.name}` : undefined;
+                    }}
+                  />
                 </div>
 
                 {/* Quantity */}

@@ -117,25 +117,34 @@ async function main() {
 
     // --- catalog seed: office chair example (CHAIR-001) ---
     // Materials (all under Acme Manufacturing)
-    const mkMaterial = (id: string, name: string, sku: string, unit: string, minStock: number) =>
+    // Give every material real on-hand stock so the overview, max-buildable,
+    // forecast, and rules engine have something to show on a fresh seed.
+    const mkMaterial = (
+      id: string,
+      name: string,
+      sku: string,
+      unit: string,
+      minStock: number,
+      currentStock: number,
+    ) =>
       client!.query(
-        `INSERT INTO public.materials (id, tenant_id, name, sku, unit, min_stock, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, now(), now())`,
-        [id, acmeId, name, sku, unit, minStock],
+        `INSERT INTO public.materials (id, tenant_id, name, sku, unit, min_stock, current_stock, reserved_qty, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 0, now(), now())`,
+        [id, acmeId, name, sku, unit, minStock, currentStock],
       );
 
     const seatId = randomUUID();
-    await mkMaterial(seatId, 'Seat', 'SEAT-001', 'pcs', 2000);
+    await mkMaterial(seatId, 'Seat', 'SEAT-001', 'pcs', 2000, 2500);
     const backrestId = randomUUID();
-    await mkMaterial(backrestId, 'Backrest', 'BACK-001', 'pcs', 420);
+    await mkMaterial(backrestId, 'Backrest', 'BACK-001', 'pcs', 420, 420);
     const wheelsId = randomUUID();
-    await mkMaterial(wheelsId, 'Wheels', 'WHL-001', 'pcs', 5000);
+    await mkMaterial(wheelsId, 'Wheels', 'WHL-001', 'pcs', 5000, 2000);
     const cylinderId = randomUUID();
-    await mkMaterial(cylinderId, 'Gas Cylinder', 'CYL-001', 'pcs', 4500);
+    await mkMaterial(cylinderId, 'Gas Cylinder', 'CYL-001', 'pcs', 4500, 5000);
     const screwsId = randomUUID();
-    await mkMaterial(screwsId, 'Screws (M6)', 'SCR-M6', 'pcs', 20000);
+    await mkMaterial(screwsId, 'Screws (M6)', 'SCR-M6', 'pcs', 20000, 50000);
     const armrestId = randomUUID();
-    await mkMaterial(armrestId, 'Armrest Pair', 'ARM-001', 'pcs', 500);
+    await mkMaterial(armrestId, 'Armrest Pair', 'ARM-001', 'pcs', 500, 600);
 
     // Product
     const productId = randomUUID();
@@ -171,6 +180,63 @@ async function main() {
     await mkBomItem(randomUUID(), bomId, cylinderId, 1, 'pcs');
     await mkBomItem(randomUUID(), bomId, screwsId, 8, 'pcs');
     await mkBomItem(randomUUID(), bomId, armrestId, 1, 'pcs');
+
+    // --- supporting seed so the UI is not empty on a fresh install ---
+
+    // Warehouse for Acme.
+    const warehouseId = randomUUID();
+    await client!.query(
+      `INSERT INTO public.warehouses (id, tenant_id, name, code, address, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, now(), now())`,
+      [warehouseId, acmeId, 'Main warehouse', 'MW-01', 'Acme distribution centre'],
+    );
+
+    // One active machine so the schedule screen shows content.
+    const machineId = randomUUID();
+    await client!.query(
+      `INSERT INTO public.machines (id, tenant_id, name, code, capacity_per_day, is_active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, true, now(), now())`,
+      [machineId, acmeId, 'CNC Lathe', 'CL-01', 200],
+    );
+
+    // A production order for CHAIR-001 that is SCHEDULED today so the
+    // schedule grid and the overview "orders at risk" tile have real data.
+    const scheduleDate = new Date();
+    scheduleDate.setHours(0, 0, 0, 0);
+    const orderId = randomUUID();
+    await client!.query(
+      `INSERT INTO public.production_orders (id, tenant_id, product_id, machine_id, quantity, scheduled_date, status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, now(), now())`,
+      [orderId, acmeId, productId, machineId, 100, scheduleDate.toISOString(), 'SCHEDULED'],
+    );
+
+    // A couple of in-app notifications for Ada so the bell and the
+    // notifications page are not empty on first login.
+    const adaUserId = adaR.rows[0].id;
+    await client!.query(
+      `INSERT INTO public.notifications (id, tenant_id, user_id, type, title, message, read, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, false, now())`,
+      [
+        randomUUID(),
+        acmeId,
+        adaUserId,
+        'LOW_STOCK',
+        'Low stock alert',
+        'Backrest (BACK-001) is at its reorder point with 420 pcs available.',
+      ],
+    );
+    await client!.query(
+      `INSERT INTO public.notifications (id, tenant_id, user_id, type, title, message, read, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, false, now())`,
+      [
+        randomUUID(),
+        acmeId,
+        adaUserId,
+        'REORDER_POINT',
+        'Reorder point approaching',
+        'Wheels (WHL-001) is approaching its reorder point: 2000 pcs available vs 5000 min.',
+      ],
+    );
 
     // --- report ---
     const tRow = await client!.query(`SELECT count(*) AS c FROM public.tenants`);

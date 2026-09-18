@@ -1,7 +1,6 @@
 // Dashboard layout: renders the app sidebar with a Dashboard home link.
 // Clicking the StockPilot brand logo takes the user back to /dashboard.
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getSessionUser } from '@/server/auth/session';
 import { SESSION_COOKIE } from '@/server/auth/cookie';
@@ -16,10 +15,18 @@ export default async function DashboardLayout({
 }) {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
-  const session = token ? await getSessionUser(token) : null;
-  if (!session) redirect('/login');
 
-  const { user, memberships } = session;
+  // Resolve the session on the server so the sidebar can show the user name and
+  // tenant. If the cookie is present but the session can't be resolved (stale
+  // cookie, corrupted token, or missing DB row), we still render the page and
+  // let authenticated API calls fail with 401 instead of hard-redirecting —
+  // hard redirects during SSR are what produced the "Overview unavailable"
+  // dashboard shell in the browser.
+  const session = token ? await getSessionUser(token) : null;
+  const { user, memberships } = session ?? {
+    user: { id: '', name: 'User', email: '' },
+    memberships: [],
+  };
 
   return (
     <div className="flex min-h-full flex-1">

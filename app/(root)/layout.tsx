@@ -7,7 +7,7 @@ import { SESSION_COOKIE } from '@/server/auth/cookie';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { UserMenu } from '@/components/user-menu';
 import { NotificationBell } from '@/components/notification-bell';
-import { History, Package, Building, Boxes, Bell, TrendingUp, Factory } from 'lucide-react';
+import { History, Package, Building, Boxes, Bell, TrendingUp, Factory, User } from 'lucide-react';
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const store = await cookies();
@@ -105,6 +105,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           >
             <TrendingUp className="size-4" />
             Forecast
+          </Link>
+          <Link
+            href="/settings"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <User className="size-4" />
+            Settings
           </Link>
         </nav>
 

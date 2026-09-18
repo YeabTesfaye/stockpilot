@@ -5,9 +5,6 @@ import { hashPassword, verifyPassword } from '@/server/auth/hash';
 import { createSession, getSessionUser } from '@/server/auth/session';
 import { SESSION_COOKIE, sessionCookieOptions } from '@/server/auth/cookie';
 
-// A real argon2 hash of a random throwaway string, used only to burn the same
-// CPU time on the "unknown email" path so response timing doesn't leak which
-// emails are registered.
 let dummyHash: Promise<string> | null = null;
 
 export async function POST(request: Request) {
@@ -24,16 +21,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
   }
 
+  console.error('[LOGIN DEBUG] email:', email, 'password length:', password.length, 'password first 3 chars:', password.substring(0, 3));
+
   const user = await db.orm.public.User.where((u) => u.email.eq(email)).first();
+
+  console.error('[LOGIN DEBUG] user found:', !!user);
+  if (user) {
+    console.error('[LOGIN DEBUG] user.passwordHash:', user.passwordHash);
+    console.error('[LOGIN DEBUG] user.passwordHash length:', user.passwordHash?.length);
+  }
 
   if (!user) {
     dummyHash ??= hashPassword('timing-equalizer');
     await verifyPassword(await dummyHash, password);
+    console.error('[LOGIN DEBUG] returning 401 - user not found');
     return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
   }
 
   const ok = await verifyPassword(user.passwordHash, password);
+  console.error('[LOGIN DEBUG] verifyPassword result:', ok);
+
   if (!ok) {
+    console.error('[LOGIN DEBUG] returning 401 - password mismatch');
     return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
   }
 
@@ -45,5 +54,6 @@ export async function POST(request: Request) {
 
   const res = NextResponse.json(session);
   res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions());
+  console.error('[LOGIN DEBUG] SUCCESS - session created for user:', user.id);
   return res;
 }

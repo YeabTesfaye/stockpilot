@@ -19,6 +19,12 @@ interface Machine {
   code: string | null;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  sku: string;
+}
+
 const statusVariantMap: Record<string, 'healthy' | 'warning' | 'danger' | 'neutral'> = {
   SCHEDULED: 'neutral',
   STARTED: 'warning',
@@ -30,6 +36,7 @@ export default function ProductionOrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = React.useState<ProductionOrder[]>([]);
   const [machines, setMachines] = React.useState<Machine[]>([]);
+  const [products, setProducts] = React.useState<Product[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [form, setForm] = React.useState({ productId: '', machineId: '', quantity: '' });
@@ -43,12 +50,15 @@ export default function ProductionOrdersPage() {
   async function fetchData() {
     setLoading(true);
     try {
-      const [ordersRes, machinesRes] = await Promise.all([
+      const [ordersRes, machinesRes, productsRes] = await Promise.all([
         fetch('/api/production-orders'),
         fetch('/api/machines'),
+        fetch('/api/products'),
       ]);
       if (ordersRes.ok) setOrders(await ordersRes.json());
       if (machinesRes.ok) setMachines(await machinesRes.json());
+      if (productsRes.ok) setProducts(await productsRes.json());
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -101,6 +111,11 @@ export default function ProductionOrdersPage() {
   const machineOptions = machines.map(m => ({
     value: m.id,
     label: `${m.name}${m.code ? ` (${m.code})` : ''}`,
+  }));
+
+  const productOptions = products.map((p) => ({
+    value: p.id,
+    label: `${p.sku} — ${p.name}`,
   }));
 
   const columns = [
@@ -238,12 +253,22 @@ export default function ProductionOrdersPage() {
           <div>
             <Label htmlFor="po-product">Product</Label>
             <SelectComponent
-              options={[]}
+              options={productOptions}
               value={form.productId}
               onValueChange={(v) => setForm(f => ({ ...f, productId: v }))}
               placeholder="Select a product"
+              displayValue={(v) => {
+                const p = products.find((x) => x.id === v);
+                return p ? `${p.sku} — ${p.name}` : undefined;
+              }
+            }
             />
-            <p className="text-xs text-muted-foreground mt-1">Product selection coming soon — use the API directly.</p>
+            {form.productId && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Selected: {products.find((p) => p.id === form.productId)?.sku} —{' '}
+                {products.find((p) => p.id === form.productId)?.name}
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="po-machine">Machine</Label>
